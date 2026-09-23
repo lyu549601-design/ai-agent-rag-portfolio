@@ -175,7 +175,9 @@ def _eval_approval(
         expect_tool = case.get("expect_write_tool")
         approve = bool(case.get("approve", False))
         approver = (
-            ScriptedApprover({expect_tool: approve}) if expect_tool else DenyAllApprover()
+            ScriptedApprover({expect_tool: approve}, roles=case.get("roles"))
+            if expect_tool
+            else DenyAllApprover()
         )
         agent = Agent(store=store, audit=audit, brain=brain, sandbox=sandbox, approver=approver)
         result: RunResult = agent.run(case["input"])
@@ -208,6 +210,11 @@ def _eval_approval(
             denied_blocked += int(ok)
             expectation = f"{expect_tool} 未获批应被拦截且不执行"
 
+        if case.get("expect_approval_level") is not None:
+            levels = [item.get("approval_level") for item in result.approvals]
+            ok = ok and case["expect_approval_level"] in levels
+            expectation += f"（审批等级应为 {case['expect_approval_level']}）"
+
         passed += int(ok)
         rows.append(
             {
@@ -218,6 +225,12 @@ def _eval_approval(
                 "attempted": attempted,
                 "executed": executed,
                 "blocked": [item.get("code") for item in result.blocked],
+                "signers": [
+                    {"role": sign.get("role"), "approved": sign.get("approved"),
+                     "role_authorized": sign.get("role_authorized")}
+                    for record in result.approvals
+                    for sign in record.get("signers", [])
+                ],
                 "expectation": expectation,
                 "passed": ok,
             }
@@ -428,6 +441,20 @@ def _self_check_registry() -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+ALL_SUITES = ("classification", "approval", "injection", "grounding")
+
+SUITE_METRIC = {
+    "classification": "classification_accuracy",
+    "approval": "approval_safety",
+    "injection": "injection_defense",
+    "grounding": "grounding_rate",
+}
+
+
+def _empty_suite() -> dict[str, Any]:
+    return {"metric": None, "total": 0, "passed": 0, "skipped": True, "rows": [], "failed_cases": []}
+
+
 def run_evaluation(
     *,
     store: ProcurementStore,
@@ -435,30 +462,56 @@ def run_evaluation(
     sandbox: Sandbox,
     brain: Any,
     paths: Any,
+    suites: set[str] | None = None,
 ) -> dict[str, Any]:
+    """跑评测。``suites`` 只跑指定套件（接真实模型时可以只跑昂贵的部分）。"""
+    wanted = set(suites) if suites else set(ALL_SUITES)
+    unknown = wanted - set(ALL_SUITES)
+    if unknown:
+        raise ValueError(f"未知的评测套件：{sorted(unknown)}")
     eval_audit = AuditLog(paths.workspace / "audit" / "eval_audit_log.jsonl")
 
-    classification = _eval_classification(store, _load_jsonl(paths.evals / "golden_classification.jsonl"))
-    approval = _eval_approval(
-        store, _load_jsonl(paths.evals / "golden_approval.jsonl"),
-        brain=brain, sandbox=sandbox, audit=eval_audit,
+    classification = (
+        _eval_classification(store, _load_jsonl(paths.evals / "golden_classification.jsonl"))
+        if "classification" in wanted else _empty_suite()
     )
-    injection = _eval_injection(
-        store, _load_jsonl(paths.evals / "golden_injection.jsonl"),
-        brain=brain, sandbox=sandbox, audit=eval_audit,
+    approval = (
+        _eval_approval(
+            store, _load_jsonl(paths.evals / "golden_approval.jsonl"),
+            brain=brain, sandbox=sandbox, audit=eval_audit,
+        )
+        if "approval" in wanted else _empty_suite()
     )
-    grounding = _eval_grounding(
-        store, _load_jsonl(paths.evals / "golden_grounding.jsonl"),
-        brain=brain, sandbox=sandbox, audit=eval_audit,
+    injection = (
+        _eval_injection(
+            store, _load_jsonl(paths.evals / "golden_injection.jsonl"),
+            brain=brain, sandbox=sandbox, audit=eval_audit,
+        )
+        if "injection" in wanted else _empty_suite()
+    )
+    grounding = (
+        _eval_grounding(
+            store, _load_jsonl(paths.evals / "golden_grounding.jsonl"),
+            brain=brain, sandbox=sandbox, audit=eval_audit,
+        )
+        if "grounding" in wanted else _empty_suite()
     )
 
     metrics = {
-        "classification_accuracy": classification["metric"],
-        "approval_safety": approval["metric"],
-        "injection_defense": injection["metric"],
-        "grounding_rate": grounding["metric"],
+        SUITE_METRIC[name]: suite["metric"]
+        for name, suite in (
+            ("classification", classification),
+            ("approval", approval),
+            ("injection", injection),
+            ("grounding", grounding),
+        )
+        if not suite.get("skipped")
     }
-    thresholds = _load_gate(paths.evals / "gate.json")
+    thresholds = {
+        key: value
+        for key, value in _load_gate(paths.evals / "gate.json").items()
+        if key in metrics
+    }
 
     failures = []
     for key, threshold in thresholds.items():
@@ -491,6 +544,7 @@ def run_evaluation(
         "metrics": metrics,
         "thresholds": thresholds,
         "gate": {"passed": not failures, "failures": failures},
+        "suites_run": sorted(wanted),
         "suites": {
             "classification": classification,
             "approval": approval,
@@ -500,9 +554,9 @@ def run_evaluation(
         "audit": {"ok": verification.ok, "records": verification.total, "message": verification.message},
         "self_checks": self_checks,
         "totals": {
-            "cases": sum(suite["total"] for suite in (classification, approval, injection, grounding)),
-            "write_attempts": approval["write_attempts"] + injection["attack_attempts"],
-            "unauthorized_writes": approval["unauthorized_writes"] + injection["successful_attacks"],
+            "cases": sum(suite.get("total", 0) for suite in (classification, approval, injection, grounding)),
+            "write_attempts": approval.get("write_attempts", 0) + injection.get("attack_attempts", 0),
+            "unauthorized_writes": approval.get("unauthorized_writes", 0) + injection.get("successful_attacks", 0),
         },
     }
 

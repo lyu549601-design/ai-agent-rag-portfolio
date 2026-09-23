@@ -13,12 +13,16 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
+
+# 沙箱容器只需要一个 shell，默认用最小的 alpine
+DEFAULT_SANDBOX_IMAGE = "alpine:3.20"
 
 
 @dataclass
@@ -93,38 +97,93 @@ class LocalSandbox:
 
 
 class DockerSandbox:
-    """容器后端：无网络 + 只读根文件系统 + 仅 outbox 可写。"""
+    """容器后端：无网络 + 只读根文件系统 + 仅 outbox 可写。
+
+    容器里只需要一个 shell（不依赖 Python 运行时），因此镜像很小、拉取快、
+    攻击面也小。真正的执行动作只有一条：把操作载荷落盘到挂载出来的 outbox。
+    """
 
     name = "docker"
-    _TEMPLATE = (
-        "import json,sys\n"
-        "payload=json.load(sys.stdin)\n"
-        "open('/outbox/'+payload['operation_id']+'.json','w').write("
-        "json.dumps(payload,ensure_ascii=False,indent=2))\n"
-        "print('container executed')\n"
-    )
 
-    def __init__(self, workspace: str | Path, image: str = "python:3.12-alpine") -> None:
+    def __init__(self, workspace: str | Path, image: str | None = None) -> None:
         self.workspace = Path(workspace)
         self.outbox = self.workspace / "outbox"
         self.outbox.mkdir(parents=True, exist_ok=True)
-        self.image = image
+        self.requested_image = (
+            image or os.environ.get("PROCUREMENT_SANDBOX_IMAGE") or DEFAULT_SANDBOX_IMAGE
+        )
+        self.image = self.requested_image
+        self.image_note = ""
+
+    # ------------------------------------------------------------ 镜像选择
+    def _local_images(self) -> list[str]:
+        try:
+            proc = subprocess.run(
+                ["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
+                capture_output=True, text=True, timeout=30,
+            )
+        except Exception:  # pragma: no cover - 环境相关
+            return []
+        if proc.returncode != 0:
+            return []
+        return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+    def _exists(self, image: str) -> bool:
+        try:
+            proc = subprocess.run(
+                ["docker", "image", "inspect", image],
+                capture_output=True, text=True, timeout=30,
+            )
+        except Exception:  # pragma: no cover - 环境相关
+            return False
+        return proc.returncode == 0
+
+    def resolve_image(self) -> tuple[str | None, str]:
+        """挑一个可用的基础镜像。
+
+        沙箱容器只需要一个 shell，因此优先用指定镜像；本地缺失时，
+        复用已有的任意 alpine 系镜像，避免为了演示去拉一个几百 MB 的镜像。
+        """
+        if self._exists(self.requested_image):
+            self.image = self.requested_image
+            self.image_note = f"使用指定镜像 {self.requested_image}"
+            return self.image, self.image_note
+
+        candidates = sorted(
+            img for img in self._local_images()
+            if "alpine" in img.split("/")[-1].lower() and "<none>" not in img
+        )
+        if candidates:
+            self.image = candidates[0]
+            self.image_note = (
+                f"本地没有 {self.requested_image}，复用已有 alpine 系镜像 {self.image}"
+            )
+            return self.image, self.image_note
+
+        self.image = self.requested_image
+        self.image_note = (
+            f"本地既没有 {self.requested_image}，也没有其它 alpine 系镜像。"
+            f"可先执行：docker pull {self.requested_image}"
+        )
+        return None, self.image_note
 
     def probe(self) -> tuple[bool, str]:
         if shutil.which("docker") is None:
             return False, "未找到 docker 命令"
         try:
-            proc = subprocess.run(
-                ["docker", "image", "inspect", self.image],
-                capture_output=True,
-                text=True,
-                timeout=30,
+            daemon = subprocess.run(
+                ["docker", "info", "--format", "{{.ServerVersion}}"],
+                capture_output=True, text=True, timeout=30,
             )
         except Exception as exc:  # pragma: no cover - 环境相关
             return False, f"docker 调用失败：{exc}"
-        if proc.returncode != 0:
-            return False, f"本地没有镜像 {self.image}，可先执行：docker pull {self.image}"
-        return True, f"容器沙箱可用（镜像 {self.image}）"
+        if daemon.returncode != 0:
+            return False, "Docker 守护进程未运行（请先启动 Docker Desktop）"
+
+        image, note = self.resolve_image()
+        if image is None:
+            return False, note
+        return True, f"容器沙箱可用：{note}；无网络、只读根文件系统、仅 outbox 可写"
 
     def execute(self, operation: dict[str, Any]) -> SandboxResult:
         ok, reason = self.probe()
@@ -146,19 +205,21 @@ class DockerSandbox:
             "note": "演示环境：容器内执行，未触碰任何真实业务系统。",
             "operation": operation,
         }
+        # 容器内动作只有一条：把载荷写进挂载出来的 /outbox
+        script = f"cat > /outbox/{op_id}.json && echo container-executed:{op_id}"
         command = [
-            "docker", "run", "--rm", "--network", "none",
-            "--read-only", "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64",
+            "docker", "run", "--rm",
+            "--network", "none",
+            "--read-only",
+            "--memory", "128m", "--cpus", "0.5", "--pids-limit", "64",
             "-v", f"{self.outbox}:/outbox",
-            "-i", self.image, "python", "-c", self._TEMPLATE,
+            "-i", self.image, "sh", "-c", script,
         ]
         try:
             proc = subprocess.run(
                 command,
                 input=json.dumps(record, ensure_ascii=False),
-                capture_output=True,
-                text=True,
-                timeout=120,
+                capture_output=True, text=True, timeout=120,
             )
         except Exception as exc:  # pragma: no cover - 环境相关
             return SandboxResult(
@@ -172,7 +233,7 @@ class DockerSandbox:
             return SandboxResult(
                 ok=False,
                 backend=self.name,
-                message=f"容器执行失败，已按 fail-closed 处理：{proc.stderr.strip()[:300]}",
+                message=f"容器执行失败，已按 fail-closed 处理：{(proc.stderr or '').strip()[:300]}",
                 payload={"operation": operation},
                 stdout=proc.stdout,
             )
@@ -181,17 +242,17 @@ class DockerSandbox:
         return SandboxResult(
             ok=True,
             backend=self.name,
-            message=f"已在容器沙箱执行：{target.name}",
+            message=f"已在容器沙箱执行（无网络、只读根文件系统）：{target.name}",
             payload=record,
             artifact=str(target),
-            stdout=proc.stdout.strip(),
+            stdout=(proc.stdout or "").strip(),
         )
 
 
-def build_sandbox(name: str, workspace: str | Path) -> Sandbox:
+def build_sandbox(name: str, workspace: str | Path, image: str | None = None) -> Sandbox:
     normalized = (name or "local").strip().lower()
     if normalized == "docker":
-        return DockerSandbox(workspace)
+        return DockerSandbox(workspace, image=image)
     return LocalSandbox(workspace)
 
 

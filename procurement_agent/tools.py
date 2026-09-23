@@ -145,6 +145,13 @@ WRITE_INTENTS: list[tuple[str, list[str]]] = [
         ],
     ),
     ("inquiry", ["询价", "发询价", "比价", "问价", "找供应商报价"]),
+    (
+        "update_supplier",
+        [
+            "修改供应商", "更新供应商", "改供应商", "变更供应商", "供应商联系人",
+            "改联系人", "更新联系人", "改成", "改为",
+        ],
+    ),
 ]
 
 QUERY_MARKERS = [
@@ -209,6 +216,23 @@ def _fallback_name(segment: str, spec: str, quantity: re.Match[str] | None) -> s
     text = re.sub(r"[0-9]+(?:\.[0-9]+)?[A-Za-z]{0,3}", " ", text)
     text = re.sub(r"[（）()\[\]【】:：,，。；;、\-—/\\]", " ", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+SUPPLIER_ID_RE = re.compile(r"SUP-\d+", re.IGNORECASE)
+
+
+def _supplier_id_in_text(text: str) -> str | None:
+    match = SUPPLIER_ID_RE.search(text or "")
+    return match.group(0).upper() if match else None
+
+
+CHANGE_VALUE_RE = re.compile(r"(?:改成|改为|变更为|更新为|设为)\s*([^\s，,。；;]+)")
+
+
+def _value_after_change(text: str) -> str | None:
+    """从"把 X 改成 Y"里取出 Y，用于构造主数据变更参数。"""
+    match = CHANGE_VALUE_RE.search(text or "")
+    return match.group(1) if match else None
 
 
 def _detect_intent(text: str) -> str:
@@ -322,6 +346,9 @@ def parse_requirement(store: ProcurementStore, text: str) -> ToolResult:
         "related_party": flags["related_party"],
         "has_material_cert": not flags["no_material_cert"],
         "missing_quantity": any(item["quantity"] is None for item in items),
+        "change_value": _value_after_change(clean_text),
+        # 用户在原始输入里点名的供应商属于可信来源，用来与"模型自己挑的供应商"区分
+        "preferred_supplier_id": _supplier_id_in_text(clean_text),
     }
 
     summary_parts = [

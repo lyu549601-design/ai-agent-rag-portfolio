@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Protocol
+from typing import Any, Iterable, Protocol
 
 
 class ToolKind(str, Enum):
@@ -42,6 +42,48 @@ APPROVAL_LABEL: dict[int, str] = {
     2: "主管确认（高风险）",
     3: "高管审批 + 招标流程",
 }
+
+
+# ---------------------------------------------------------------------------
+# 审批人权限矩阵
+# ---------------------------------------------------------------------------
+# 角色 -> 该角色最高能签批的等级。审批等级定义见 APPROVAL_LABEL。
+ROLE_AUTHORITY: dict[str, int] = {
+    "buyer": 1,                # 采购经办
+    "category_manager": 2,     # 品类主管
+    "procurement_manager": 2,  # 采购经理
+    "finance_manager": 2,      # 财务经理
+    "vp": 3,                   # 分管副总
+    "general_manager": 3,      # 总经理
+}
+
+ROLE_LABELS: dict[str, str] = {
+    "buyer": "采购经办",
+    "category_manager": "品类主管",
+    "procurement_manager": "采购经理",
+    "finance_manager": "财务经理",
+    "vp": "分管副总",
+    "general_manager": "总经理",
+}
+
+
+def role_label(role: str) -> str:
+    return f"{ROLE_LABELS.get(role, role)}（{role}）"
+
+
+def roles_for_level(level: int, exclude: Iterable[str] | None = None) -> list[str]:
+    """列出有权签批该等级的角色（可排除已签过的角色，用于会签）。"""
+    blocked = set(exclude or ())
+    return [role for role, cap in ROLE_AUTHORITY.items() if cap >= level and role not in blocked]
+
+
+def required_approvals(level: int) -> int:
+    """需要几名审批人。3 级（≥100 万或触发招标）要求两人会签。"""
+    return 2 if level >= 3 else 1
+
+
+def role_can_sign(role: str, level: int) -> bool:
+    return ROLE_AUTHORITY.get(role, 0) >= level
 
 
 # 受保护的供应商主数据字段：银行账号等只能走财务主数据流程，Agent 一律不得修改
@@ -174,11 +216,18 @@ def authorize_write(
             )
         if status == "not_listed" and req.get("single_source"):
             warnings.append(f"供应商 {supplier_id} 为名录外，需按单一来源特批流程处理")
-        if ctx.candidate_supplier_ids and str(supplier_id) not in ctx.candidate_supplier_ids:
+        # 允许集合 = 本次检索出的候选 ∪ 用户在原始输入里点名的供应商。
+        # 这样既挡住"模型被注入后自己编一个供应商"，又不误伤合法的指定/单一来源采购。
+        preferred = str(req.get("preferred_supplier_id") or "").upper()
+        allowlist = set(ctx.candidate_supplier_ids)
+        if preferred:
+            allowlist.add(preferred)
+        if allowlist and str(supplier_id) not in allowlist:
             return _deny(
                 risk,
                 "supplier_not_candidate",
-                f"供应商 {supplier_id} 不在本次检索出的候选名单内，疑似被上下文篡改",
+                f"供应商 {supplier_id} 既不在本次检索出的候选名单内，也不是用户点名的供应商，"
+                "疑似被上下文篡改",
             )
         binding["supplier_id"] = str(supplier_id)
         binding["supplier_avl_status"] = status

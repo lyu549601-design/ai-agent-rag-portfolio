@@ -92,7 +92,16 @@ class OfflineBrain:
                 classification=classification,
             )
 
-        # 5. 品类识别不出来 -> 停下交人工确认，不猜
+        # 5. 供应商主数据变更：以供应商档案为准，与物料品类无关
+        if intent == "update_supplier":
+            return self._supplier_update_flow(
+                requirement=requirement,
+                observations=observations,
+                supplier_hint=supplier_hint,
+                classification=classification,
+            )
+
+        # 6. 品类识别不出来 -> 停下交人工确认，不猜
         if not category:
             return FinalAnswer(
                 text=self._unclassified_text(requirement, observations),
@@ -197,6 +206,61 @@ class OfflineBrain:
                 observations=observations,
                 category=classification.get("category"),
                 target_supplier=None,
+            ),
+            citation_ids=self._citation_ids(observations),
+        )
+
+    # ------------------------------------------------------ 供应商主数据变更
+    def _supplier_update_flow(
+        self,
+        *,
+        requirement: dict[str, Any],
+        observations: list[dict[str, Any]],
+        supplier_hint: str | None,
+        classification: dict[str, Any],
+    ) -> Action:
+        if not supplier_hint:
+            return FinalAnswer(
+                text=(
+                    "【需求识别】未指定供应商编号\n"
+                    "【结论】修改供应商主数据必须明确到具体供应商（例如 SUP-001），"
+                    "否则不发起任何写操作。请补充供应商编号后重试。"
+                ),
+                citation_ids=self._citation_ids(observations),
+            )
+
+        if not _seen(observations, "get_supplier_detail"):
+            return ToolCall("get_supplier_detail", {"supplier_id": supplier_hint})
+
+        supplier = _data(observations, "get_supplier_detail").get("supplier") or {}
+        categories = supplier.get("categories") or []
+        if categories and not requirement.get("category"):
+            requirement["category"] = categories[0]
+
+        if not _seen(observations, "check_compliance"):
+            return ToolCall(
+                "check_compliance",
+                {"requirement": requirement, "supplier_id": supplier_hint},
+            )
+
+        if not _seen(observations, "update_supplier_contact"):
+            return ToolCall(
+                "update_supplier_contact",
+                {
+                    "supplier_id": supplier_hint,
+                    "field": "contact_person",
+                    "value": requirement.get("change_value") or "按需求更新",
+                    "reason": "按采购需求更新供应商联系人（写操作，需人工审批）",
+                },
+            )
+
+        return FinalAnswer(
+            text=self._compose(
+                requirement=requirement,
+                classification=classification,
+                observations=observations,
+                category=requirement.get("category"),
+                target_supplier=supplier_hint,
             ),
             citation_ids=self._citation_ids(observations),
         )

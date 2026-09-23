@@ -20,6 +20,7 @@ from .agent import Agent, ApprovalRequest, ApprovalResponse, AutoApproveApprover
 from .audit import AuditLog
 from .config import Paths, default_paths, load_env_file
 from .llm import build_brain
+from .policy import ROLE_LABELS
 from .sandbox import build_sandbox
 from .store import JsonStore
 from .tools import read_tool_names, validate_registry, write_tool_names
@@ -38,7 +39,10 @@ class CliApprover:
         self.auto_approve = auto_approve
 
     def request(self, request: ApprovalRequest) -> ApprovalResponse:
-        ui.section("写操作审批请求")
+        title = "写操作审批请求"
+        if request.round_total > 1:
+            title += f"（会签 {request.round_index}/{request.round_total}）"
+        ui.section(title)
         ui.kv("动作", request.tool)
         ui.kv("风险等级", request.risk.upper())
         ui.kv("审批等级", f"{request.approval_level}（{request.reason}）")
@@ -49,39 +53,65 @@ class CliApprover:
             ui.warn(warning)
         if request.context_note:
             ui.warn(request.context_note)
+        if request.used_roles:
+            ui.kv(
+                "已签字",
+                "、".join(ROLE_LABELS.get(role, role) for role in request.used_roles),
+            )
+
+        roles = request.allowed_roles or ["buyer"]
+        ui.kv(
+            "可选审批角色",
+            "；".join(
+                f"{index + 1}.{ROLE_LABELS.get(role, role)}"
+                for index, role in enumerate(roles)
+            ),
+        )
 
         if self.auto_approve:
-            ui.ok("--yes 已开启：自动批准（仅用于正向对照演示）")
-            return ApprovalResponse(approved=True, approver="自动批准（--yes）", comment="演示用自动批准")
+            role = roles[0]
+            ui.ok(f"--yes 已开启：以「{ROLE_LABELS.get(role, role)}」身份自动批准（正向对照用）")
+            return ApprovalResponse(
+                approved=True,
+                approver=f"自动批准（--yes）",
+                role=role,
+                comment="演示用自动批准",
+            )
 
         import sys
 
         if not sys.stdin.isatty():
             ui.warn("当前是非交互环境，按治理要求默认拒绝（需要审批请加 --yes 做正向对照）")
             return ApprovalResponse(
-                approved=False, approver="非交互环境", comment="非交互环境默认拒绝"
+                approved=False, approver="非交互环境", role="buyer", comment="非交互环境默认拒绝"
             )
 
         try:
+            answer = input("      以哪个角色审批？输入编号（回车=1，其它=拒绝）：").strip()
+            if answer and (not answer.isdigit() or not (1 <= int(answer) <= len(roles))):
+                return ApprovalResponse(
+                    approved=False, approver="本机输入", role="buyer", comment="角色选择无效，视为拒绝"
+                )
+            role = roles[int(answer) - 1] if answer else roles[0]
+
             if request.confirmation_token:
-                answer = input(
-                    f"      高风险操作，请输入 {request.confirmation_token} 确认执行（其它输入=拒绝）："
+                typed = input(
+                    f"      高风险操作，请输入 {request.confirmation_token} 确认（其它输入=拒绝）："
                 ).strip()
-                approved = answer == request.confirmation_token
+                approved = typed == request.confirmation_token
             else:
-                answer = input("      批准执行？[y/N]：").strip().lower()
-                approved = answer in {"y", "yes", "是"}
+                typed = input("      批准执行？[y/N]：").strip().lower()
+                approved = typed in {"y", "yes", "是"}
         except (EOFError, KeyboardInterrupt):
             ui.warn("未收到有效确认输入，按治理要求视为拒绝")
             return ApprovalResponse(
-                approved=False,
-                approver="无有效确认",
-                comment="未取得人工确认，拒绝执行",
+                approved=False, approver="无有效确认", role="buyer", comment="未取得人工确认，拒绝执行"
             )
 
         return ApprovalResponse(
             approved=approved,
-            approver="采购经办（本机输入）",
+            approver=f"本机输入（{ROLE_LABELS.get(role, role)}）",
+            role=role,
             comment="人工确认" if approved else "人工拒绝",
         )
 
@@ -266,12 +296,23 @@ def cmd_eval(args: argparse.Namespace) -> int:
     from . import evaluation
 
     ctx = _context(args)
+
+    suites = None
+    suite_arg = getattr(args, "suite", "all") or "all"
+    if suite_arg != "all":
+        suites = {item.strip() for item in suite_arg.split(",") if item.strip()}
+        unknown = suites - set(evaluation.ALL_SUITES)
+        if unknown:
+            ui.bad(f"未知的评测套件：{sorted(unknown)}，可选：all / " + " / ".join(evaluation.ALL_SUITES))
+            return 2
+
     report = evaluation.run_evaluation(
         store=ctx["store"],
         audit=ctx["audit"],
         sandbox=ctx["sandbox"],
         brain=ctx["brain"],
         paths=ctx["paths"],
+        suites=suites,
     )
     evaluation.print_report(report)
     written = evaluation.write_report(report, ctx["paths"].reports)
@@ -383,7 +424,13 @@ def build_parser() -> argparse.ArgumentParser:
     ask = sub.add_parser("ask", help="单次问答")
     ask.add_argument("text", help="需求描述")
 
-    sub.add_parser("eval", help="运行评测集并生成报告")
+    eval_parser = sub.add_parser("eval", help="运行评测集并生成报告")
+    eval_parser.add_argument(
+        "--suite",
+        default="all",
+        help="只跑指定套件，逗号分隔：all / classification / approval / injection / grounding"
+             "（接真实模型时可用它只跑昂贵部分）",
+    )
 
     audit = sub.add_parser("audit", help="审计日志操作")
     audit_sub = audit.add_subparsers(dest="audit_command", required=True)

@@ -16,10 +16,15 @@ from typing import Any, Protocol
 
 @dataclass
 class ToolCall:
-    """请求调用一个工具。"""
+    """请求调用一个工具。
+
+    ``meta`` 用来携带"必须原样回传给模型"的上下文（例如思考模式模型返回的
+    ``reasoning_content``）。离线大脑不使用它。
+    """
 
     name: str
     args: dict[str, Any] = field(default_factory=dict)
+    meta: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
