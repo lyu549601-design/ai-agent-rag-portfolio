@@ -1,0 +1,20 @@
+{
+  "keyword": {
+    "recall_at_k": 1.0,
+    "mrr": 1.0,
+    "k": 5,
+    "questions": 16
+  },
+  "vector": {
+    "recall_at_k": 1.0,
+    "mrr": 0.7812,
+    "k": 5,
+    "questions": 16
+  },
+  "hybrid": {
+    "recall_at_k": 1.0,
+    "mrr": 0.9688,
+    "k": 5,
+    "questions": 16
+  }
+}

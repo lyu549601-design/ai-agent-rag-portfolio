@@ -1,0 +1,412 @@
+{
+  "summary": {
+    "on": {
+      "runs": 12,
+      "completion_rate": 1.0,
+      "average_review_score": 0.8583,
+      "average_elapsed_seconds": 28.47
+    },
+    "off": {
+      "runs": 12,
+      "completion_rate": 0.0,
+      "average_review_score": 0.8,
+      "average_elapsed_seconds": 21.88
+    },
+    "completion_rate_delta": 1.0
+  },
+  "records": [
+    {
+      "topic_id": "t01",
+      "topic": "企业级 AI Agent 技术现状与趋势",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "结构完整：六个章节（scope/landscape/memory/rag/evaluation/synthesis）均已完成，且与任务清单一一对应，无空洞章节。",
+        "逻辑一致：从研究边界→技术路线→记忆机制→RAG可信→评估风险→趋势建议，依赖链（scope→landscape/memory/rag→evaluation→synthesis）整合顺畅，结论前后一致（如单/多Agent边界、上下文分层、权限前置在多章反复印证）。",
+        "引用充分：每个关键论断均带可回溯引用切片，引用来源列表与正文引用ID一致，无孤立引用或悬空引用。",
+        "事实边界清晰：全文多处显式声明“现有证据未提供具体性能指标或行业量化数据，故不作量化断言”，未越界编造数据，符合证据约束。",
+        "依赖结论整合到位：synthesis 章节有效整合了 evaluation、memory、rag 的结论，并给出可执行四步路线，非简单复述。",
+        "轻微不足：部分论断（如 RRF 融合、幂等键）为工程常识性陈述，证据支撑偏单一来源；趋势判断部分对“行业趋势”的量化/时间维度缺失，仅停留在方法论层面，故未给满分。"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 25.72,
+      "task_id": "eval-on-t01",
+      "errors": []
+    },
+    {
+      "topic_id": "t01",
+      "topic": "企业级 AI Agent 技术现状与趋势",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 35.92,
+      "task_id": "eval-off-t01",
+      "errors": []
+    },
+    {
+      "topic_id": "t02",
+      "topic": "多 Agent 协作系统在生产环境中的可靠性",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "结构完整：六个章节（scope/landscape/memory/rag/evaluation/synthesis）全部完成，依赖链 scope→landscape→evaluation→synthesis 与 scope→memory/rag→evaluation 均被正确整合，synthesis 明确综合了前文证据。",
+        "逻辑一致：全文围绕'工程可靠性而非模型能力'这一主线，任务级可控性、协作新风险、成本延迟、安全审计四条核心问题在各章节反复呼应且无自相矛盾。",
+        "引用充分：每个事实性论断均带可回溯引用切片，引用来源列表与正文引用一致，未出现悬空引用。",
+        "事实边界清晰：多处显式声明证据未给出量化阈值（可用性、失败率、引用准确率、缓存命中率）及监控平台/向量库选型，避免了无依据的量化断言，符合证据约束。",
+        "轻微不足：landscape 与 evaluation 在'生产风险清单'和'成本延迟控制'上存在较大篇幅重复；scope 中'判断标准'仅给出可观测性覆盖项，未形成可操作的判定门槛，略显单薄。以上不构成不通过理由。"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 23.12,
+      "task_id": "eval-on-t02",
+      "errors": []
+    },
+    {
+      "topic_id": "t02",
+      "topic": "多 Agent 协作系统在生产环境中的可靠性",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 14.68,
+      "task_id": "eval-off-t02",
+      "errors": []
+    },
+    {
+      "topic_id": "t03",
+      "topic": "Agent 长期记忆机制与消融评估",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "六个章节均完整覆盖目标：范围界定、技术路线、记忆机制、RAG 引用、评估风险、趋势建议，无空洞章节。",
+        "依赖关系整合到位：evaluation 章节同时吸收了 landscape、memory、rag 的结论（消融实验、混合检索评估、安全隔离），synthesis 基于 evaluation 给出可执行路线。",
+        "引用充分且可回溯：每个关键论断均带证据切片标识，引用来源列表与正文标识一致，无孤立引用。",
+        "事实边界处理规范：多处明确标注现有证据未给出样本量阈值、评分权重、统计显著性、记忆容量、缓存失效与知识更新机制，未越界编造。",
+        "逻辑一致性良好：分层存储—受控复用—消融验证的主线贯穿全文，安全约束作为横切关注点在各章节一致出现。",
+        "轻微不足：evaluation 章节安全边界段落存在一处引用标识后多余空格，且部分论断（如过程/结果指标清单）在多个章节重复表述，冗余度略高，但不影响结论可靠性。"
+      ],
+      "citation_count": 5,
+      "elapsed_seconds": 19.3,
+      "task_id": "eval-on-t03",
+      "errors": []
+    },
+    {
+      "topic_id": "t03",
+      "topic": "Agent 长期记忆机制与消融评估",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 5,
+      "elapsed_seconds": 20.68,
+      "task_id": "eval-off-t03",
+      "errors": []
+    },
+    {
+      "topic_id": "t04",
+      "topic": "企业 RAG 混合检索与检索质量评估",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "范围界定清晰：明确限定“检索—重排—评估”环节，不展开生成模型训练，并给出三条核心问题与判断标准，边界说明（不设量化合格线）与证据一致。",
+        "技术路线梳理完整：双路召回+RRF融合、中文分词/n-gram与向量维度统一、Recall@k/MRR评估集要求均有引用支撑，且明确重排不能掩盖数据质量问题。",
+        "依赖结论已整合：landscape、memory、rag 的结论在 evaluation 与 synthesis 中被复用（混合检索动因、记忆分层、安全边界前置、评估闭环），未出现孤立章节。",
+        "引用充分且可回溯：每个实质论断均带切片引用，引用来源列表与正文引用 ID 一致，无悬空引用。",
+        "事实边界克制：多处显式声明证据未给出阈值/参数，故不设定量化合格线，未编造数字，符合证据约束。",
+        "逻辑一致性良好：全文对“权限过滤先于检索”“检索结果作为证据而非指令”“评估独立成环”三条主线前后一致，无自相矛盾。",
+        "轻微不足：memory 章节与主题（混合检索与检索质量评估）关联度偏弱，属外围内容；synthesis 的三步行动建议较通用，缺少对融合权重、k 值选择等检索侧具体取舍的讨论，故未给满分。"
+      ],
+      "citation_count": 5,
+      "elapsed_seconds": 24.46,
+      "task_id": "eval-on-t04",
+      "errors": []
+    },
+    {
+      "topic_id": "t04",
+      "topic": "企业 RAG 混合检索与检索质量评估",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 19.23,
+      "task_id": "eval-off-t04",
+      "errors": []
+    },
+    {
+      "topic_id": "t05",
+      "topic": "报告型 Agent 的引用可信与证据回指",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "六个章节均完整覆盖目标：范围与关键问题、技术路线、记忆机制、RAG 引用可信、评估风险、趋势建议，无空洞章节。",
+        "依赖关系整合到位：landscape/memory/rag 均建立在 scope 的判断标准上，evaluation 综合了 landscape、memory、rag 的结论，synthesis 整合了 evaluation 并给出可执行路线。",
+        "引用充分且可回溯：正文引用标识与文末来源列表一一对应，未出现来源列表中不存在的标识，符合报告自身提出的‘标识真实’标准。",
+        "事实边界声明一致：多处明确标注‘语义支持判定阈值、人工抽检比例、样本量阈值、成本延迟量化目标’为已知边界，未将未证实数值写成事实。",
+        "逻辑一致性良好：核心论点（引用存在≠引用正确、证据与控制分离、版本可溯、追问沿用同一引用规则）在各章节间保持一致，无相互矛盾表述。",
+        "轻微瑕疵：evaluation 章节首句‘并保留原始报告和逐任务日志 。’存在引用标识缺失（句号前空格），与全文引用规范不一致，属格式疏漏而非内容缺陷；此外部分结论在多个章节重复出现，冗余度略高。",
+        "整体达到放行标准（0.8 以上），建议修订时补齐该处缺失引用并适度去重。"
+      ],
+      "citation_count": 10,
+      "elapsed_seconds": 36.35,
+      "task_id": "eval-on-t05",
+      "errors": []
+    },
+    {
+      "topic_id": "t05",
+      "topic": "报告型 Agent 的引用可信与证据回指",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 10,
+      "elapsed_seconds": 18.45,
+      "task_id": "eval-off-t05",
+      "errors": []
+    },
+    {
+      "topic_id": "t06",
+      "topic": "LLM Agent 的自动评估体系",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "完整性：六个章节（scope/landscape/memory/rag/evaluation/synthesis）全部产出，覆盖研究边界、技术路线、记忆机制、RAG 引用可信、评估风险与趋势建议，无空洞章节。",
+        "逻辑一致性：各章节结论相互衔接，evaluation 整合了 landscape/memory/rag 的依赖结论（分层评估、记忆消融、检索指标、安全审计），synthesis 又整合 evaluation 并给出可执行路线，依赖链完整。",
+        "引用充分性：每个关键论断均带可回溯引用标识，引用来源列表与正文标识一一对应，无孤立或悬空引用。",
+        "事实边界：报告反复明确标注证据未给出评分量表、阈值、统计显著性判定与缓存失效参数，未越界给出量化合格线，边界声明诚实且一致。",
+        "扣分点：scope 与 landscape 在‘分层评估三层结构’与‘过程/结果指标’上存在较大篇幅重复；部分章节（如 memory、rag）与‘自动评估体系’主题的关联需读者自行推断，主题聚焦度可再收紧；synthesis 的选型建议（多 Agent vs 单 Agent）与评估体系主线关联偏弱。"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 57.25,
+      "task_id": "eval-on-t06",
+      "errors": []
+    },
+    {
+      "topic_id": "t06",
+      "topic": "LLM Agent 的自动评估体系",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 19.98,
+      "task_id": "eval-off-t06",
+      "errors": []
+    },
+    {
+      "topic_id": "t07",
+      "topic": "LangGraph 与 Agent 工作流编排",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "六个章节均已完成且内容充实，覆盖研究范围、技术路线、记忆机制、RAG 可信、评估风险与行动建议，无空洞章节。",
+        "依赖关系整合良好：landscape 承接 scope 的边界定义，evaluation 综合 landscape/memory/rag 的过程与结果指标，synthesis 基于 evaluation 给出可执行路线，逻辑链条一致。",
+        "引用充分且可回溯：每个关键论断均带证据切片标识，引用来源列表与正文引用一致，未出现无来源的强断言。",
+        "事实边界处理诚实：多处明确标注现有证据未给出量化指标与实测评测结果，避免过度外推。",
+        "存在轻微问题：evaluation 章节中“输出记录引用与版本日志”一句缺少引用标识（正文末尾空格处），属引用遗漏；部分内容在章节间重复度较高（如状态内容取舍、并行三边界多次复述），可进一步精炼。",
+        "整体满足放行标准，建议补全该处引用并适度去重后定稿。"
+      ],
+      "citation_count": 7,
+      "elapsed_seconds": 34.53,
+      "task_id": "eval-on-t07",
+      "errors": []
+    },
+    {
+      "topic_id": "t07",
+      "topic": "LangGraph 与 Agent 工作流编排",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 7,
+      "elapsed_seconds": 39.49,
+      "task_id": "eval-off-t07",
+      "errors": []
+    },
+    {
+      "topic_id": "t08",
+      "topic": "企业知识库治理与增量更新",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "六个章节均已完成且内容充实，覆盖范围界定、技术路线、记忆机制、RAG 引用可信、评估风险与趋势建议，无空洞章节。",
+        "依赖关系整合到位：landscape 承接 scope 的治理上限与可验证性判断；evaluation 综合了 landscape/memory/rag 的评估、成本与安全约束；synthesis 基于 evaluation 给出趋势与可执行路线，逻辑链条一致。",
+        "引用充分且可回溯：每个关键论断均带证据切片标识，引用来源列表与正文标识一一对应，未发现引用不存在标识的幻觉引用。",
+        "事实边界清晰：各章节均明确标注证据未覆盖的阈值、频率、责任分工、记忆容量与缓存失效策略，未将常识补成事实。",
+        "逻辑一致性良好：治理决定 RAG 上限、权限前置过滤、引用标识比对、增量更新后质量回归等核心主张在全文保持一致，无自相矛盾。",
+        "轻微不足：evaluation 章节中一处引用校验论断缺少行内引用标识（句末为空），且部分结论在多个章节重复表述，压缩了信息增量；但整体不影响放行。"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 25.69,
+      "task_id": "eval-on-t08",
+      "errors": []
+    },
+    {
+      "topic_id": "t08",
+      "topic": "企业知识库治理与增量更新",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 20.29,
+      "task_id": "eval-off-t08",
+      "errors": []
+    },
+    {
+      "topic_id": "t09",
+      "topic": "Agent 安全边界与提示注入防护",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.85,
+      "review_reasons": [
+        "完整性：六个章节（scope/landscape/memory/rag/evaluation/synthesis）全部产出，覆盖研究范围、技术路线、记忆机制、RAG 引用、评估风险与趋势建议，无空洞章节。",
+        "逻辑一致性：各章节共享同一核心前提（知识库内容视为不可信数据、控制与数据分离、权限过滤前置），结论相互印证，未出现自相矛盾。",
+        "依赖整合：evaluation 整合了 landscape/memory/rag 的结论（评估指标、记忆消融、检索评估），synthesis 整合了 evaluation 及前文证据，依赖链闭合。",
+        "引用充分性：每个事实性论断均带可回溯的 chunk_id 引用，引用来源清单完整列出 10 条来源，无孤立断言。",
+        "事实边界：各章节均明确声明现有证据未给出提示注入的攻击分类、检测算法、量化指标及记忆容量/缓存失效参数，未越界作事实性断言，边界处理规范。",
+        "扣分点：主题为‘提示注入防护’，但受证据所限，报告实质内容偏向通用 Agent 安全边界与工程可靠性，对提示注入的攻击面/检测/评估着墨较少，主题聚焦度略低于标题承诺；此为证据边界所致，非逻辑缺陷。"
+      ],
+      "citation_count": 10,
+      "elapsed_seconds": 28.67,
+      "task_id": "eval-on-t09",
+      "errors": []
+    },
+    {
+      "topic_id": "t09",
+      "topic": "Agent 安全边界与提示注入防护",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 9,
+      "elapsed_seconds": 19.96,
+      "task_id": "eval-off-t09",
+      "errors": []
+    },
+    {
+      "topic_id": "t10",
+      "topic": "研究助手报告追问与任务记忆",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "六个章节均已完成且内容充实，无空洞章节；scope 定义边界与判断标准，landscape/memory/rag 分别覆盖三条路线，evaluation 整合了依赖章节的结论，synthesis 给出趋势与可执行路线，依赖关系得到落实。",
+        "逻辑一致性良好：全文围绕‘分层记忆 + 双源检索 + 可追溯引用’主线，各章节结论相互印证，未出现自相矛盾。",
+        "引用充分：每个关键论断均带 chunk_id 引用，引用来源列表与正文引用一致，且引用规则（只引用真实 chunk_id、证据不足明确说明）在正文中被反复贯彻。",
+        "事实边界处理得当：多处明确标注现有证据未给出完成率、引用正确率、Recall@k、MRR 等阈值或权重，未虚构量化结论，符合证据约束。",
+        "扣分点：synthesis 的‘趋势判断’与‘选型建议’多为对前文证据的重述，缺少超出已有证据的独立综合或权衡分析；evaluation 章节对成本/延迟仅定性描述，未整合任何可比较的量化线索（虽证据本身缺失，但可更明确标注为证据空白而非泛泛陈述）。"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 21.51,
+      "task_id": "eval-on-t10",
+      "errors": []
+    },
+    {
+      "topic_id": "t10",
+      "topic": "研究助手报告追问与任务记忆",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 15.83,
+      "task_id": "eval-off-t10",
+      "errors": []
+    },
+    {
+      "topic_id": "t11",
+      "topic": "上下文工程与 Agent 成本控制",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.86,
+      "review_reasons": [
+        "结构完整：六个章节（scope/landscape/memory/rag/evaluation/synthesis）全部完成，依赖链 scope→landscape→memory/rag→evaluation→synthesis 逻辑自洽，synthesis 整合了前文结论。",
+        "引用充分：每个章节均带可回溯的切片引用，引用来源列表与正文引用标识一致，无孤立引用。",
+        "事实边界清晰：各章节均明确声明现有证据未给出成本量化阈值或评估指标数值，未越界给出定量结论，符合证据约束。",
+        "逻辑一致：上下文取舍、单/多 Agent 取舍、成本控制三条主线在 scope、landscape、synthesis 中保持一致，无自相矛盾。",
+        "轻微问题：evaluation 章节中“缓存必须带版本和权限键”一句缺少引用标识（正文出现空引用），且部分内容与 landscape 路线三高度重复，存在冗余；但整体不影响放行。"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 20.3,
+      "task_id": "eval-on-t11",
+      "errors": []
+    },
+    {
+      "topic_id": "t11",
+      "topic": "上下文工程与 Agent 成本控制",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 8,
+      "elapsed_seconds": 17.09,
+      "task_id": "eval-off-t11",
+      "errors": []
+    },
+    {
+      "topic_id": "t12",
+      "topic": "多 Agent 系统在生产落地的延迟和可靠性",
+      "memory": "on",
+      "completed": true,
+      "review_score": 0.85,
+      "review_reasons": [
+        "结构完整：六个章节（scope/landscape/memory/rag/evaluation/synthesis）均已完成，依赖链 scope→landscape/memory/rag→evaluation→synthesis 逻辑自洽，synthesis 整合了 evaluation 及前序结论。",
+        "引用充分：每个章节均带可回溯的引用切片，引用来源列表与正文引用一致，无孤立或缺失引用。",
+        "逻辑一致：全文围绕延迟与可靠性两条主线，DAG 编排、失败约束、缓存版本/权限键、可观测性、安全边界等要点在各章节间保持一致，无相互矛盾。",
+        "事实边界清晰：各章节均明确声明现有证据未给出 P99/SLA 等量化阈值，仅以机制完备性为判断依据，避免了过度断言。",
+        "轻微不足：主题聚焦‘延迟和可靠性’，但 memory 与 rag 两章部分内容偏向通用机制，与延迟/可靠性的直接关联论证略弱；且全文缺乏任何量化数据支撑，深度受限。整体仍达到放行标准。"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 24.7,
+      "task_id": "eval-on-t12",
+      "errors": []
+    },
+    {
+      "topic_id": "t12",
+      "topic": "多 Agent 系统在生产落地的延迟和可靠性",
+      "memory": "off",
+      "completed": false,
+      "review_score": 0.8,
+      "review_reasons": [
+        "最终综合章节跨分支引用不足：覆盖 3 个来源，至少需要 4 个"
+      ],
+      "citation_count": 6,
+      "elapsed_seconds": 20.99,
+      "task_id": "eval-off-t12",
+      "errors": []
+    }
+  ]
+}

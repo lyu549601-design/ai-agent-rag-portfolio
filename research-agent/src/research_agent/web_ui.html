@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>企业知识研究助手</title>
+  <style>
+    :root { --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#6b778c; --line:#dbe3ef; --brand:#2563eb; --brand2:#0f766e; --ok:#15803d; --warn:#b45309; --bad:#b91c1c; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Microsoft YaHei","PingFang SC",sans-serif; color:var(--ink); background:var(--bg); }
+    header { padding:20px 30px; background:linear-gradient(120deg,#0f172a,#1d4ed8); color:white; }
+    header h1 { margin:0 0 6px; font-size:24px; }
+    header p { margin:0; color:#dbeafe; }
+    .layout { display:grid; grid-template-columns:270px 1fr; min-height:calc(100vh - 86px); }
+    aside { padding:22px; background:#fff; border-right:1px solid var(--line); }
+    main { padding:22px 28px; min-width:0; }
+    .status-list { display:grid; gap:10px; margin:14px 0 24px; }
+    .status { display:flex; justify-content:space-between; gap:8px; font-size:13px; }
+    .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#cbd5e1; margin-right:6px; }
+    .dot.ok { background:#22c55e; } .dot.bad { background:#ef4444; }
+    label { display:block; font-weight:700; font-size:13px; margin:14px 0 6px; }
+    input, textarea, select { width:100%; border:1px solid var(--line); border-radius:9px; padding:10px; font:inherit; background:white; }
+    textarea { min-height:92px; resize:vertical; }
+    button { border:0; border-radius:9px; padding:10px 14px; font-weight:700; cursor:pointer; background:var(--brand); color:white; }
+    button.secondary { background:#e2e8f0; color:var(--ink); }
+    button:disabled { opacity:.55; cursor:not-allowed; }
+    .check { display:flex; align-items:center; gap:8px; font-size:13px; margin:10px 0; }
+    .check input { width:auto; }
+    .tabs { display:flex; gap:8px; border-bottom:1px solid var(--line); margin-bottom:18px; }
+    .tab { padding:10px 14px; border-radius:9px 9px 0 0; color:var(--muted); cursor:pointer; font-weight:700; }
+    .tab.active { color:var(--brand); background:#eaf1ff; }
+    .section { display:none; } .section.active { display:block; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:0 4px 18px rgba(15,23,42,.04); }
+    .metric { font-size:28px; font-weight:800; margin-top:6px; }
+    .muted { color:var(--muted); font-size:13px; }
+    .progress { height:12px; background:#e2e8f0; border-radius:999px; overflow:hidden; margin:12px 0; }
+    .progress > div { height:100%; width:0; background:linear-gradient(90deg,#2563eb,#14b8a6); transition:width .35s; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { text-align:left; border-bottom:1px solid var(--line); padding:9px 7px; vertical-align:top; }
+    th { color:var(--muted); font-weight:700; }
+    .pill { display:inline-block; padding:3px 8px; border-radius:999px; background:#e2e8f0; font-size:12px; }
+    .pill.done { background:#dcfce7; color:#166534; } .pill.running { background:#dbeafe; color:#1d4ed8; } .pill.failed { background:#fee2e2; color:#991b1b; }
+    .report { white-space:normal; line-height:1.8; } .report h1,.report h2,.report h3 { margin-top:20px; } .report pre { white-space:pre-wrap; }
+    .answer { white-space:pre-wrap; line-height:1.8; background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:14px; margin-top:12px; }
+    .bar-row { margin:12px 0; } .bar-label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; } .bar { height:11px; background:#e2e8f0; border-radius:999px; overflow:hidden; } .bar > div { height:100%; background:var(--brand2); }
+    .actions { display:flex; gap:9px; flex-wrap:wrap; margin-top:12px; }
+    @media (max-width:850px) { .layout { grid-template-columns:1fr; } aside { border-right:0; border-bottom:1px solid var(--line); } main { padding:18px; } }
+  </style>
+</head>
+<body>
+<header><h1>企业知识研究助手</h1><p>多 Agent · 任务记忆 · RAG 引用 · 本地演示控制台</p></header>
+<div class="layout">
+  <aside>
+    <div class="muted">服务状态</div>
+    <div class="status-list" id="status-list"><div class="status">加载中...</div></div>
+    <label for="topic">研究主题</label>
+    <input id="topic" value="企业级 AI Agent 技术现状与趋势">
+    <label for="task-id">任务 ID（可留空）</label>
+    <input id="task-id" placeholder="例如：demo-001">
+    <div class="check"><input id="memory" type="checkbox" checked><label for="memory" style="margin:0">开启任务记忆</label></div>
+    <div class="check"><input id="fast" type="checkbox"><label for="fast" style="margin:0">快速模式（5 个任务）</label></div>
+    <button id="start-button" style="width:100%;margin-top:8px">开始研究</button>
+    <div style="margin-top:22px" class="muted">最近任务</div>
+    <div id="recent-jobs" class="muted" style="margin-top:8px"></div>
+  </aside>
+  <main>
+    <nav class="tabs">
+      <div class="tab active" data-tab="run">任务运行</div><div class="tab" data-tab="report">研究报告</div><div class="tab" data-tab="ask">报告追问</div><div class="tab" data-tab="metrics">评估指标</div><div class="tab" data-tab="knowledge">知识库</div>
+    </nav>
+
+    <section id="tab-run" class="section active">
+      <div class="grid">
+        <div class="card"><div class="muted">当前阶段</div><div id="stage" class="metric" style="font-size:20px">等待开始</div></div>
+        <div class="card"><div class="muted">进度</div><div id="progress-text" class="metric">0%</div></div>
+        <div class="card"><div class="muted">审核得分</div><div id="score" class="metric">-</div></div>
+        <div class="card"><div class="muted">耗时</div><div id="elapsed" class="metric">-</div></div>
+      </div>
+      <div class="progress"><div id="progress-bar"></div></div>
+      <div id="job-message" class="muted">填写主题后开始研究。</div>
+      <div class="card" style="margin-top:16px"><h3 style="margin-top:0">任务拆解与执行状态</h3><div id="task-table"><span class="muted">尚未开始</span></div></div>
+    </section>
+
+    <section id="tab-report" class="section">
+      <div class="actions"><select id="report-select" style="max-width:420px"></select><button id="load-report">加载报告</button><button id="download-report" class="secondary" disabled>下载 Markdown</button></div>
+      <article id="report-content" class="report card" style="margin-top:16px"><span class="muted">选择一份报告查看。</span></article>
+    </section>
+
+    <section id="tab-ask" class="section">
+      <div class="card">
+        <label for="ask-task">选择任务</label><select id="ask-task"></select>
+        <label for="question">追问内容</label><textarea id="question" placeholder="例如：多 Agent 什么时候不值得使用？"></textarea>
+        <div class="actions"><button id="ask-button">发送问题</button></div>
+        <div id="ask-answer" class="answer">回答会显示在这里，并带引用来源。</div>
+      </div>
+    </section>
+
+    <section id="tab-metrics" class="section"><div id="metrics-content" class="grid"><span class="muted">正在加载指标...</span></div></section>
+
+    <section id="tab-knowledge" class="section">
+      <div class="grid"><div class="card"><div class="muted">文档数</div><div id="doc-count" class="metric">-</div></div><div class="card"><div class="muted">切片数</div><div id="chunk-count" class="metric">-</div></div></div>
+      <div class="actions"><button id="reindex-button">重建知识库索引</button></div>
+      <div id="knowledge-list" class="card" style="margin-top:16px"></div>
+    </section>
+  </main>
+</div>
+<script>
+const api = async (path, options={}) => { const r = await fetch(path, {headers:{'Content-Type':'application/json'}, ...options}); if(!r.ok) throw new Error((await r.json()).detail || r.statusText); return r.json(); };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const badge = status => { const cls = status === 'done' ? 'done' : status === 'running' ? 'running' : status === 'failed' ? 'failed' : ''; return `<span class="pill ${cls}">${esc(status)}</span>`; };
+const markdown = text => { let h=esc(text).replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/^- (.*)$/gm,'<li>$1</li>').replace(/\n/g,'<br>'); return h; };
+
+document.querySelectorAll('.tab').forEach(el => el.onclick = () => { document.querySelectorAll('.tab,.section').forEach(x=>x.classList.remove('active')); el.classList.add('active'); document.getElementById('tab-'+el.dataset.tab).classList.add('active'); });
+async function loadStatus(){ try { const s=await api('/api/status'); document.getElementById('status-list').innerHTML = `<div class="status"><span><i class="dot ${s.storage.ok?'ok':'bad'}"></i>PostgreSQL</span><span>${esc(s.storage.detail)}</span></div><div class="status"><span><i class="dot ${s.redis.ok?'ok':'bad'}"></i>Redis</span><span>${esc(s.redis.detail)}</span></div><div class="status"><span><i class="dot ${s.llm.configured?'ok':'bad'}"></i>DeepSeek</span><span>${esc(s.llm.model)}</span></div><div class="status"><span><i class="dot ok"></i>Embedding</span><span>${esc(s.embedding)}</span></div><div class="status"><span>知识库</span><span>${s.knowledge.documents||0} 文档 / ${s.knowledge.chunks||0} 切片</span></div>`; } catch(e){ document.getElementById('status-list').innerHTML=`<div class="status"><span class="dot bad"></span>${esc(e.message)}</div>`; } }
+async function loadJobs(){ try { const jobs=await api('/api/jobs'); if(jobs.length){ document.getElementById('recent-jobs').innerHTML = jobs.slice(0,5).map(j=>`<div style="margin:6px 0">${esc(j.task_id)} · ${esc(j.status)}</div>`).join(''); return; } const tasks=await api('/api/tasks'); document.getElementById('recent-jobs').innerHTML = tasks.slice(0,5).map(t=>`<div style="margin:6px 0">${esc(t.task_id)} · ${t.completed?'通过':'未通过'}</div>`).join('') || '<span>暂无任务</span>'; } catch(e) { console.error(e); } }
+async function loadTasks(){ const tasks=await api('/api/tasks'); const opts=tasks.map(t=>`<option value="${esc(t.task_id)}">${esc(t.task_id)} · ${esc(t.topic)}</option>`).join(''); document.getElementById('report-select').innerHTML=opts||'<option>暂无报告</option>'; document.getElementById('ask-task').innerHTML=opts||'<option>暂无任务</option>'; }
+function renderJob(job){ document.getElementById('stage').textContent=job.message || job.stage; document.getElementById('progress-text').textContent=`${Math.round((job.progress||0)*100)}%`; document.getElementById('progress-bar').style.width=`${Math.round((job.progress||0)*100)}%`; document.getElementById('score').textContent=job.result?.review_score ? Number(job.result.review_score).toFixed(2) : '-'; document.getElementById('elapsed').textContent=job.result?.elapsed_seconds ? `${job.result.elapsed_seconds}s` : '-'; document.getElementById('job-message').textContent=job.message || ''; const tasks=job.subtasks||job.result?.subtasks||[]; document.getElementById('task-table').innerHTML = tasks.length ? `<table><thead><tr><th>任务</th><th>状态</th><th>次数</th><th>引用</th></tr></thead><tbody>${tasks.map(t=>`<tr><td>${esc(t.title||t.id)}</td><td>${badge(t.status||'pending')}</td><td>${t.attempts||0}</td><td>${(t.citations||[]).length}</td></tr>`).join('')}</tbody></table>` : '<span class="muted">等待 Planner 拆解...</span>'; }
+let timer=null;
+document.getElementById('start-button').onclick=async()=>{ try{ document.getElementById('start-button').disabled=true; const job=await api('/api/jobs',{method:'POST',body:JSON.stringify({topic:document.getElementById('topic').value,task_id:document.getElementById('task-id').value,memory_enabled:document.getElementById('memory').checked,fast:document.getElementById('fast').checked})}); window.currentJob=job.job_id; renderJob(job); if(timer) clearInterval(timer); timer=setInterval(async()=>{ try{ const j=await api('/api/jobs/'+window.currentJob); renderJob(j); if(j.status==='completed'||j.status==='failed'){ clearInterval(timer); document.getElementById('start-button').disabled=false; loadTasks(); loadStatus(); } }catch(e){ console.error(e); } },1000); }catch(e){ alert(e.message); document.getElementById('start-button').disabled=false; } };
+document.getElementById('load-report').onclick=async()=>{ const id=document.getElementById('report-select').value; if(!id)return; const r=await api('/api/report/'+id); document.getElementById('report-content').innerHTML=markdown(r.report); document.getElementById('download-report').disabled=false; document.getElementById('download-report').onclick=()=>{ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([r.report],{type:'text/markdown'})); a.download=id+'.md'; a.click(); URL.revokeObjectURL(a.href); }; };
+document.getElementById('ask-button').onclick=async()=>{ const task=document.getElementById('ask-task').value; const q=document.getElementById('question').value; if(!task||!q)return; const box=document.getElementById('ask-answer'); box.textContent='正在检索并生成回答...'; try{ const r=await api('/api/ask',{method:'POST',body:JSON.stringify({task_id:task,question:q})}); box.innerHTML=markdown(r.answer); }catch(e){ box.textContent=e.message; } };
+async function loadMetrics(){ try{ const m=await api('/api/metrics'); const r=m.retrieval||{}, mem=m.memory?.summary||{}; document.getElementById('metrics-content').innerHTML = `<div class="card"><h3>RAG 检索质量</h3>${['keyword','vector','hybrid'].map(k=>`<div class="bar-row"><div class="bar-label"><span>${k}</span><span>MRR ${r[k]?.mrr?.toFixed(4)||'-'} · Recall ${r[k]?.recall_at_k?.toFixed(4)||'-'}</span></div><div class="bar"><div style="width:${(r[k]?.mrr||0)*100}%"></div></div></div>`).join('')}</div><div class="card"><h3>记忆消融完成率</h3><div class="bar-row"><div class="bar-label"><span>开启记忆</span><strong>${((mem.on?.completion_rate||0)*100).toFixed(0)}%</strong></div><div class="bar"><div style="width:${(mem.on?.completion_rate||0)*100}%"></div></div></div><div class="bar-row"><div class="bar-label"><span>关闭记忆</span><strong>${((mem.off?.completion_rate||0)*100).toFixed(0)}%</strong></div><div class="bar"><div style="width:${(mem.off?.completion_rate||0)*100}%"></div></div></div></div>`; }catch(e){ document.getElementById('metrics-content').innerHTML=`<span class="muted">${esc(e.message)}</span>`; } }
+async function loadKnowledge(){ try{ const k=await api('/api/knowledge'); document.getElementById('doc-count').textContent=k.document_count; document.getElementById('chunk-count').textContent=k.chunks; document.getElementById('knowledge-list').innerHTML=`<h3 style="margin-top:0">已索引文档</h3><table><tbody>${k.documents.map(d=>`<tr><td>${esc(d.name)}</td><td>${d.size} B</td></tr>`).join('')}</tbody></table>`; }catch(e){ document.getElementById('knowledge-list').textContent=e.message; } }
+document.getElementById('reindex-button').onclick=async()=>{ const b=document.getElementById('reindex-button'); b.disabled=true; b.textContent='正在重建...'; try{ const r=await api('/api/ingest',{method:'POST'}); b.textContent=`完成：${r.documents} 文档 / ${r.chunks} 切片`; loadKnowledge(); loadStatus(); }catch(e){ b.textContent='失败：'+e.message; } b.disabled=false; };
+loadStatus(); loadJobs(); loadTasks(); loadMetrics(); loadKnowledge(); setInterval(loadStatus,30000); setInterval(loadJobs,10000);
+</script>
+</body>
+</html>

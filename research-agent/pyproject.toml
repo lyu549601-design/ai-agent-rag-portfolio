@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "research-agent"
+version = "0.1.0"
+description = "企业知识研究助手：多 Agent、任务记忆与 RAG 的可复现实验项目"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "research-agent contributors" }]
+dependencies = [
+  "fastapi>=0.115,<1",
+  "fastembed>=0.4.0,<1",
+  "jieba>=0.42.1,<1",
+  "langchain-core==1.6.1",
+  "langgraph==1.1.10",
+  "numpy>=1.26,<3",
+  "openai>=1.55,<3",
+  "asyncpg>=0.29,<1",
+  "pydantic==2.13.5",
+  "pydantic-settings>=2.5,<3",
+  "pypdf>=5,<7",
+  "python-dotenv>=1.0,<2",
+  "rank-bm25>=0.2.2,<1",
+  "redis>=5,<8",
+  "uvicorn[standard]>=0.30,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+  "ruff>=0.8,<1",
+]
+
+[project.scripts]
+research-agent = "research_agent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+[tool.setuptools.package-data]
+research_agent = ["web_ui.html"]

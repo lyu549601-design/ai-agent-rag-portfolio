@@ -1,0 +1,5 @@
+topic_id,memory_mode,reviewer,report_path,citation_supported,section_complete,verdict,notes
+t01,on,,reports/eval-on-t01.md,,,,
+t01,off,,reports/eval-off-t01.md,,,,
+t02,on,,reports/eval-on-t02.md,,,,
+t02,off,,reports/eval-off-t02.md,,,,

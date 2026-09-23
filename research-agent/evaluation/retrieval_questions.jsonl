@@ -1,0 +1,16 @@
+{"id":"q01","question":"Planner、Executor 和 Reviewer 分别承担什么职责？","relevant_doc_ids":["01-multi-agent-overview"]}
+{"id":"q02","question":"为什么研究型 Agent 要把任务表示成 DAG？","relevant_doc_ids":["01-multi-agent-overview"]}
+{"id":"q03","question":"LangGraph 的状态图适合怎样组织 Agent 流程？","relevant_doc_ids":["02-langgraph-orchestration"]}
+{"id":"q04","question":"Agent 的工作记忆、情节记忆和长期知识有什么区别？","relevant_doc_ids":["03-agent-memory"]}
+{"id":"q05","question":"怎样验证跨步骤记忆是否真的提升任务完成率？","relevant_doc_ids":["03-agent-memory","06-agent-evaluation"]}
+{"id":"q06","question":"混合检索为什么使用 RRF 融合排名？","relevant_doc_ids":["04-hybrid-rag"]}
+{"id":"q07","question":"Recall@k 和 MRR 分别衡量什么？","relevant_doc_ids":["04-hybrid-rag"]}
+{"id":"q08","question":"如何判断报告中的引用是否是幻觉引用？","relevant_doc_ids":["05-citation-grounding"]}
+{"id":"q09","question":"Agent 评估为什么要结合确定性校验、LLM Judge 和人工抽检？","relevant_doc_ids":["06-agent-evaluation"]}
+{"id":"q10","question":"Planner 返回 JSON 后还需要做哪些程序校验？","relevant_doc_ids":["07-deepseek-structured-output"]}
+{"id":"q11","question":"知识库文档里的提示注入应该怎样处理？","relevant_doc_ids":["08-security-boundaries"]}
+{"id":"q12","question":"生产环境中的 Agent 子任务为什么需要超时、重试和幂等键？","relevant_doc_ids":["09-production-reliability"]}
+{"id":"q13","question":"多 Agent 一定比单 Agent 更好吗？","relevant_doc_ids":["10-agent-trends"]}
+{"id":"q14","question":"企业知识库为什么需要版本管理和增量更新？","relevant_doc_ids":["11-enterprise-knowledge-base"]}
+{"id":"q15","question":"报告生成后继续追问时，为什么同时需要历史记忆和原始证据？","relevant_doc_ids":["12-followup-research"]}
+{"id":"q16","question":"长上下文为什么不等于有效的上下文工程？","relevant_doc_ids":["10-agent-trends"]}
