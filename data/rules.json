@@ -1,0 +1,166 @@
+{
+  "version": "2026.09-demo",
+  "note": "全部为脱敏演示规则，不来自任何真实公司制度。",
+  "rules": [
+    {
+      "id": "R-GOV-001",
+      "group": "治理",
+      "title": "写操作必须人工审批",
+      "text": "Agent 可以自动执行只读操作（查询、比对、计算、检索）。任何会产生外部影响的写 / 改操作（创建采购申请、下达订单、发送询价、修改供应商信息、发起付款）都必须由具备权限的人员明确确认后才能执行。",
+      "severity": "critical",
+      "trigger": { "type": "always" },
+      "requires": ["人工审批留痕", "审批人身份可追溯"],
+      "source": "《采购授权与审批管理办法》第 3 条"
+    },
+    {
+      "id": "R-GOV-002",
+      "group": "治理",
+      "title": "采购建议必须可溯源",
+      "text": "给出的采购建议、合规结论与金额测算，必须标注所依据的规则编号与数据记录编号，不得凭空生成依据。",
+      "severity": "high",
+      "trigger": { "type": "always" },
+      "requires": ["引用规则编号", "引用供应商 / 订单编号"],
+      "source": "《采购决策留痕规范》第 2 条"
+    },
+    {
+      "id": "R-GOV-003",
+      "group": "治理",
+      "title": "关联交易必须披露",
+      "text": "若供应商与需求方存在股权、亲属或任职关联，必须在采购申请中披露并升级审批。",
+      "severity": "critical",
+      "trigger": { "type": "related_party" },
+      "requires": ["书面披露", "升级至上一级审批"],
+      "source": "《关联交易管理制度》第 5 条"
+    },
+    {
+      "id": "R-SUP-001",
+      "group": "供应商",
+      "title": "必须使用合格供应商名录（AVL）内供应商",
+      "text": "采购对象必须来自合格供应商名录。使用名录外供应商，需提交特批说明并由采购经理审批。",
+      "severity": "high",
+      "trigger": { "type": "supplier_not_in_avl" },
+      "requires": ["改用 AVL 内供应商", "或提交特批说明"],
+      "source": "《供应商准入与退出管理办法》第 4 条"
+    },
+    {
+      "id": "R-SUP-002",
+      "group": "供应商",
+      "title": "禁止与被冻结供应商交易",
+      "text": "处于冻结、黑名单或资质失效状态的供应商，不得发起任何采购或付款动作。",
+      "severity": "critical",
+      "trigger": { "type": "supplier_blocked" },
+      "requires": ["立即终止交易", "记录并上报合规"],
+      "source": "《供应商准入与退出管理办法》第 11 条"
+    },
+    {
+      "id": "R-PRC-001",
+      "group": "采购",
+      "title": "单笔 5 万元以上需至少三家询价",
+      "text": "单笔采购金额达到 50,000 元及以上的，应取得不少于三家的有效报价并留存比价记录。",
+      "severity": "medium",
+      "trigger": { "type": "amount_gte", "threshold": 50000 },
+      "requires": ["至少三家有效报价", "留存比价表"],
+      "source": "《采购比价管理规定》第 2 条"
+    },
+    {
+      "id": "R-PRC-002",
+      "group": "采购",
+      "title": "单笔 20 万元以上需采购经理审批",
+      "text": "单笔采购金额达到 200,000 元及以上的，除比价记录外，还需采购经理审批。",
+      "severity": "high",
+      "trigger": { "type": "amount_gte", "threshold": 200000 },
+      "requires": ["采购经理审批", "比价记录"],
+      "source": "《采购授权与审批管理办法》第 6 条"
+    },
+    {
+      "id": "R-PRC-003",
+      "group": "采购",
+      "title": "单笔 100 万元以上需公开招标",
+      "text": "单笔采购金额达到 1,000,000 元及以上的，应采用公开招标方式，并由分管副总审批。",
+      "severity": "critical",
+      "trigger": { "type": "amount_gte", "threshold": 1000000 },
+      "requires": ["公开招标", "分管副总审批"],
+      "source": "《招标管理办法》第 3 条"
+    },
+    {
+      "id": "R-PRC-004",
+      "group": "采购",
+      "title": "单一来源采购需书面理由",
+      "text": "因技术独占、原厂配套等原因采用单一来源采购的，必须提交书面理由并经总经理审批。",
+      "severity": "high",
+      "trigger": { "type": "single_source" },
+      "requires": ["书面理由", "总经理审批"],
+      "source": "《采购比价管理规定》第 7 条"
+    },
+    {
+      "id": "R-PRC-005",
+      "group": "采购",
+      "title": "报价明显高于历史均价需复核",
+      "text": "当次报价高于同规格历史成交均价 10% 以上时，必须复核价格合理性并说明原因。",
+      "severity": "medium",
+      "trigger": { "type": "price_deviation_gt", "threshold": 10 },
+      "requires": ["价格合理性复核", "书面说明"],
+      "source": "《采购成本管理办法》第 9 条"
+    },
+    {
+      "id": "R-QA-001",
+      "group": "质量",
+      "title": "钢材必须随货提供质保书",
+      "text": "所有钢材到货必须随附质保书 / 材质单，缺少质量证明文件的批次不得入库。",
+      "severity": "high",
+      "trigger": { "type": "missing_material_cert" },
+      "requires": ["随货质保书", "材质单编号登记"],
+      "source": "《原材料入厂验收规范》第 4 条"
+    },
+    {
+      "id": "R-QA-002",
+      "group": "质量",
+      "title": "进口钢材需提供原产地证明",
+      "text": "进口钢材除质保书外，还需提供原产地证明与报关单，缺一不得验收。",
+      "severity": "high",
+      "trigger": { "type": "import_material" },
+      "requires": ["原产地证明", "报关单"],
+      "source": "《进口物资管理办法》第 5 条"
+    },
+    {
+      "id": "R-QA-003",
+      "group": "质量",
+      "title": "高风险品类需质量工程师联签",
+      "text": "特种合金、压力容器用钢、危化品等高风险品类，采购方案需质量工程师联签确认。",
+      "severity": "high",
+      "trigger": { "type": "category_high_risk" },
+      "requires": ["质量工程师联签"],
+      "source": "《特种物资采购规范》第 3 条"
+    },
+    {
+      "id": "R-FIN-001",
+      "group": "资金",
+      "title": "预付款比例不得超过 30%",
+      "text": "除战略供应商经特批外，预付款比例不得超过合同金额的 30%。",
+      "severity": "high",
+      "trigger": { "type": "prepay_ratio_gt", "threshold": 30 },
+      "requires": ["调整付款条件", "或提交特批"],
+      "source": "《资金支付管理办法》第 8 条"
+    },
+    {
+      "id": "R-FIN-002",
+      "group": "资金",
+      "title": "付款必须与验收单匹配",
+      "text": "任何付款动作必须匹配对应验收单与发票信息，三单不一致不得付款。",
+      "severity": "critical",
+      "trigger": { "type": "always" },
+      "requires": ["匹配验收单", "匹配发票"],
+      "source": "《资金支付管理办法》第 12 条"
+    },
+    {
+      "id": "R-ESG-001",
+      "group": "廉洁",
+      "title": "禁止商业贿赂",
+      "text": "采购人员不得接受供应商宴请、礼品、回扣或其他不当利益，发现即上报。",
+      "severity": "critical",
+      "trigger": { "type": "always" },
+      "requires": ["廉洁承诺", "异常上报"],
+      "source": "《廉洁从业规定》第 1 条"
+    }
+  ]
+}
