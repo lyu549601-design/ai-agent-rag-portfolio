@@ -221,7 +221,7 @@ flowchart LR
 ## 仓库结构
 
 ```text
-my-repo/
+ai-agent-rag-portfolio/
 ├── trusted-procurement-agent/
 ├── research-agent/
 ├── multi-agent-collaboration-system/
