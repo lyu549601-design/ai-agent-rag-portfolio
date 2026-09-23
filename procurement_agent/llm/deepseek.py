@@ -123,6 +123,10 @@ class DeepSeekBrain:
             assistant_message: dict[str, Any] = {
                 "role": "assistant",
                 "content": meta.get("content"),
+                # 思考模式要求这个字段在整段对话里始终存在：Agent 自己产生的观察
+                # （例如编排层预解析需求）没有模型原文，也必须补一个空字符串，
+                # 否则接口会返回 400：reasoning_content must be passed back。
+                "reasoning_content": meta.get("reasoning_content") or "",
                 "tool_calls": [
                     {
                         "id": call_id,
@@ -134,10 +138,6 @@ class DeepSeekBrain:
                     }
                 ],
             }
-            # 思考模式模型（如 deepseek-v4-flash）要求把 reasoning_content 原样回传，
-            # 否则接口会返回 400：The reasoning_content in the thinking mode must be passed back.
-            if "reasoning_content" in meta:
-                assistant_message["reasoning_content"] = meta["reasoning_content"]
             messages.append(assistant_message)
             messages.append(
                 {

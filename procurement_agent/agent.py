@@ -282,8 +282,14 @@ class Agent:
         self.approver = approver
 
     # ------------------------------------------------------------------ 入口
-    def run(self, user_input: str, *, max_steps: int = MAX_STEPS) -> RunResult:
-        run_id = f"RUN-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    def run(
+        self,
+        user_input: str,
+        *,
+        max_steps: int = MAX_STEPS,
+        run_id: str | None = None,
+    ) -> RunResult:
+        run_id = run_id or f"RUN-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
         ctx = RunContext(run_id=run_id, store=self.store)
         self.audit.append(
             "user", "request.received", run_id=run_id, text=user_input, brain=self.brain.name
@@ -316,7 +322,15 @@ class Agent:
             )
             return self._finish(result)
 
-        # 2. 工具循环
+        # 2. 预解析需求：可信需求上下文由 Agent 自己建立，不依赖模型是否调用了工具。
+        #    背景：接真实模型后发现，模型有时会跳过 parse_requirement 直接调用写工具，
+        #    导致策略层因"缺少可信需求"而误拦合法请求。需求解析属于编排层职责，
+        #    因此改为在进入工具循环前先由 Agent 执行一次（结果同样进审计与观察上下文）。
+        ctx.observations.append(
+            self._execute(ToolCall("parse_requirement", {"text": user_input}), ctx)
+        )
+
+        # 3. 工具循环
         final: FinalAnswer | None = None
         steps = 0
         while steps < max_steps:
@@ -711,6 +725,7 @@ class Agent:
             operation_id=operation.get("operation_id"),
             backend=sandbox_result.backend,
             ok=sandbox_result.ok,
+            replayed=bool(getattr(sandbox_result, "replayed", False)),
             detail=sandbox_result.message,
         )
 
@@ -719,12 +734,14 @@ class Agent:
                 name, args=args, status="error", summary=sandbox_result.message, data=sandbox_result.as_dict()
             )
 
+        replayed = bool(getattr(sandbox_result, "replayed", False))
         ctx.writes_executed.append(
             {
                 "tool": name,
                 "operation_id": operation.get("operation_id"),
                 "backend": sandbox_result.backend,
                 "artifact": sandbox_result.artifact,
+                "replayed": replayed,
             }
         )
         return observation(

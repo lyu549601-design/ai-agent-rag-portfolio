@@ -19,6 +19,7 @@ from . import ui
 from .agent import Agent, ApprovalRequest, ApprovalResponse, AutoApproveApprover, DenyAllApprover
 from .audit import AuditLog
 from .config import Paths, default_paths, load_env_file
+from .integration import OutboundExecutor
 from .llm import build_brain
 from .policy import ROLE_LABELS
 from .sandbox import build_sandbox
@@ -141,6 +142,8 @@ def _context(args: argparse.Namespace) -> dict[str, Any]:
     audit = AuditLog(paths.audit_log)
     brain, note = build_brain(getattr(args, "brain", "auto"))
     sandbox = build_sandbox(getattr(args, "sandbox", "local"), paths.workspace)
+    # 沙箱外面再包一层：幂等账本 + 补偿（回滚）登记
+    outbound = OutboundExecutor(sandbox, paths.workspace / "outbox" / "ledger.json")
     return {
         "paths": paths,
         "store": store,
@@ -148,6 +151,7 @@ def _context(args: argparse.Namespace) -> dict[str, Any]:
         "brain": brain,
         "brain_note": note,
         "sandbox": sandbox,
+        "outbound": outbound,
         "approver": CliApprover(auto_approve=bool(getattr(args, "yes", False))),
     }
 
@@ -157,7 +161,7 @@ def _agent(ctx: dict[str, Any], approver: Any | None = None) -> Agent:
         store=ctx["store"],
         audit=ctx["audit"],
         brain=ctx["brain"],
-        sandbox=ctx["sandbox"],
+        sandbox=ctx["outbound"],
         approver=approver or ctx["approver"],
     )
 
@@ -278,7 +282,9 @@ def cmd_demo(args: argparse.Namespace) -> int:
         return 1
 
     print()
-    ui.info("下一步：python -m procurement_agent eval    # 跑评测集，输出真实评测数字")
+    ui.info("下一步（任选）：")
+    ui.info("  python -m procurement_agent web --open    # 网页演示，审批卡片可以点（面试展示推荐）")
+    ui.info("  python -m procurement_agent eval          # 跑评测集，输出真实评测数字")
     return 0
 
 
@@ -327,6 +333,21 @@ def cmd_eval(args: argparse.Namespace) -> int:
     for failure in report.get("gate", {}).get("failures", []):
         ui.info(failure)
     return 1
+
+
+def cmd_web(args: argparse.Namespace) -> int:
+    from .webapp import run_web
+
+    paths = _paths(args)
+    load_env_file(paths.root / ".env")
+    return run_web(
+        paths=paths,
+        brain=getattr(args, "brain", "auto"),
+        sandbox=getattr(args, "sandbox", "local"),
+        host=args.host,
+        port=args.port,
+        open_browser=bool(args.open),
+    )
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
@@ -384,14 +405,76 @@ def cmd_data(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_outbox(args: argparse.Namespace) -> int:
+    ctx = _context(args)
+    outbound: OutboundExecutor = ctx["outbound"]
+
+    if args.outbox_command == "list":
+        entries = outbound.ledger.entries()
+        ui.banner(f"交付出账本（{len(entries)} 条）")
+        if not entries:
+            ui.info("账本为空：还没有任何写操作通过审批并执行过。")
+            return 0
+        for entry in entries:
+            status = entry.get("status")
+            color = "green" if status == "applied" else "yellow" if status == "rolled_back" else "red"
+            print(
+                ui.c(f"[{status:<11}]", color)
+                + " "
+                + ui.c(str(entry.get("operation_id", ""))[:34], "cyan")
+                + " "
+                + str(entry.get("kind", ""))
+            )
+            ui.info(
+                f"后端 {entry.get('backend')}｜提交 {entry.get('submitted_at')}｜"
+                f"补偿动作 {entry.get('compensation_action') or '无'}"
+            )
+        return 0
+
+    operation_id = args.operation_id
+    entry = outbound.ledger.get(operation_id)
+    if entry is None:
+        ui.bad(f"账本里没有操作 {operation_id}")
+        return 1
+
+    if not args.yes:
+        import sys
+
+        if not sys.stdin.isatty():
+            ui.warn("回滚属于写操作，非交互环境需要显式加 --yes 才能执行")
+            return 2
+        ui.warn(
+            f"即将执行补偿动作 {entry.get('compensation_action')}，用于回滚 {operation_id}"
+        )
+        if input("      确认回滚？[y/N]：").strip().lower() not in {"y", "yes", "是"}:
+            ui.info("已取消")
+            return 0
+
+    result = outbound.rollback(operation_id)
+    ctx["audit"].append(
+        "operator",
+        "outbox.rollback",
+        operation_id=operation_id,
+        ok=result.ok,
+        detail=result.message,
+    )
+    if result.ok:
+        ui.ok(result.message)
+        return 0
+    ui.bad(result.message)
+    return 1
+
+
 def cmd_sandbox(args: argparse.Namespace) -> int:
     ctx = _context(args)
     ui.banner("执行沙箱状态")
     sandbox = ctx["sandbox"]
-    ok, message = sandbox.probe()
+    ok, message = ctx["outbound"].probe()
     ui.kv("后端", sandbox.name)
     ui.kv("可用", "是" if ok else "否")
     ui.kv("说明", message)
+    entries = ctx["outbound"].ledger.entries()
+    ui.kv("交付出账本", f"{len(entries)} 条记录（workspace/outbox/ledger.json）")
     if sandbox.name == "docker":
         ui.info("容器执行方式：--network none、根文件系统只读、仅 outbox 目录可写、限制内存与 CPU")
         ui.info("不可用时会按 fail-closed 拒绝执行，不会降级到本地执行")
@@ -442,6 +525,18 @@ def build_parser() -> argparse.ArgumentParser:
     data_sub = data.add_subparsers(dest="data_command", required=True)
     data_sub.add_parser("stats", help="数据概况")
 
+    web = sub.add_parser("web", help="启动本地网页演示（推荐）")
+    web.add_argument("--host", default="127.0.0.1")
+    web.add_argument("--port", type=int, default=8765)
+    web.add_argument("--open", action="store_true", help="启动后自动打开浏览器")
+
+    outbox = sub.add_parser("outbox", help="交付出账本与回滚")
+    outbox_sub = outbox.add_subparsers(dest="outbox_command", required=True)
+    outbox_sub.add_parser("list", help="查看写操作账本（幂等键 / 状态 / 补偿动作）")
+    rollback = outbox_sub.add_parser("rollback", help="对某次写操作执行补偿（回滚）")
+    rollback.add_argument("operation_id", help="操作编号，例如 OP-PO-20260923-120000-ABCD")
+    rollback.add_argument("--yes", action="store_true", help="跳过交互确认（脚本场景）")
+
     sandbox = sub.add_parser("sandbox", help="沙箱操作")
     sandbox_sub = sandbox.add_subparsers(dest="sandbox_command", required=True)
     sandbox_sub.add_parser("status", help="查看沙箱可用性")
@@ -462,6 +557,8 @@ def main(argv: list[str] | None = None) -> int:
         "audit": cmd_audit,
         "data": cmd_data,
         "sandbox": cmd_sandbox,
+        "outbox": cmd_outbox,
+        "web": cmd_web,
     }
     handler = handlers.get(args.command)
     if handler is None:  # pragma: no cover - argparse 已限制

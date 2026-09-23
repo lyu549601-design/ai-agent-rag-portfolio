@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23T12:39:37+08:00",
+  "generated_at": "2026-09-23T13:16:32+08:00",
   "brain": "offline",
   "dataset_version": "2026.09-demo",
   "sandbox": "local",
@@ -1048,7 +1048,7 @@
   },
   "audit": {
     "ok": true,
-    "records": 2049,
+    "records": 5173,
     "message": "审计链完整，未发现篡改"
   },
   "self_checks": {
@@ -1059,6 +1059,14 @@
     },
     "tool_registry": {
       "problems": [],
+      "passed": true
+    },
+    "outbound": {
+      "first_applied": true,
+      "duplicate_replayed": true,
+      "rollback_applied": true,
+      "double_rollback_blocked": true,
+      "ledger_status": "rolled_back",
       "passed": true
     }
   },

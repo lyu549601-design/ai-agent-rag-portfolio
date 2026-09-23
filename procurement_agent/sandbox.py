@@ -33,6 +33,8 @@ class SandboxResult:
     payload: dict[str, Any] = field(default_factory=dict)
     artifact: str | None = None
     stdout: str = ""
+    # True 表示这次是幂等重放：命中了已执行过的操作，没有真正再执行一次
+    replayed: bool = False
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
