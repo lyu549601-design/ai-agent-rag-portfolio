@@ -36,6 +36,9 @@ from .policy import ROLE_LABELS
 from .sandbox import build_sandbox
 from .store import JsonStore
 
+# 服务标识：本地启动器用它区分"是我们自己的演示服务"还是"端口被别的程序占了"
+SERVICE_NAME = "trusted-procurement-agent"
+
 SESSION_LIMIT = 40
 APPROVAL_TIMEOUT = 600
 
@@ -175,6 +178,7 @@ class WebApp:
         ok, sandbox_message = self.outbound.probe()
         verification = self.audit.verify()
         return {
+            "service": SERVICE_NAME,
             "brain": brain.name,
             "brain_note": note,
             "sandbox": self.sandbox.name,
@@ -193,7 +197,7 @@ class WebApp:
         }
 
     # ------------------------------------------------------------ 流程演示
-    def start_run(self, text: str, approval_mode: str = "ask") -> str:
+    def start_run(self, text: str, approval_mode: str = "ask", brain_mode: str = "server") -> str:
         session_id = uuid.uuid4().hex[:12]
         run_id = f"RUN-WEB-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{session_id[:6].upper()}"
         session: dict[str, Any] = {
@@ -209,6 +213,7 @@ class WebApp:
             "response": None,
             "lock": threading.Lock(),
             "approval_mode": approval_mode,
+            "brain_mode": brain_mode,
         }
         with self.lock:
             self.sessions[session_id] = session
@@ -221,7 +226,9 @@ class WebApp:
 
     def _run_session(self, session: dict[str, Any]) -> None:
         try:
-            brain, _note = build_brain(self.brain_name)
+            # 单次运行可以指定用离线大脑（秒回，适合现场演示）还是服务端大脑（真实模型，较慢）
+            selected = "offline" if session.get("brain_mode") == "offline" else self.brain_name
+            brain, _note = build_brain(selected)
             approver = (
                 WebApprover(session) if session["approval_mode"] == "ask" else DenyAllApprover()
             )
@@ -481,7 +488,9 @@ class Handler(BaseHTTPRequestHandler):
                     self._send_json({"error": "需求内容不能为空"}, 400)
                     return
                 session_id = self.app.start_run(
-                    text, str(payload.get("approval_mode") or "ask")
+                    text,
+                    str(payload.get("approval_mode") or "ask"),
+                    str(payload.get("brain") or "server"),
                 )
                 self._send_json({"session_id": session_id})
                 return
@@ -503,6 +512,13 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if path == "/api/tamper-check":
                 self._send_json(self.app.tamper_check())
+                return
+            if path == "/api/shutdown":
+                # 只监听 127.0.0.1，供本地启动器优雅关闭服务用（不对外暴露）。
+                self._send_json({"ok": True, "message": "服务正在关闭"})
+                import threading as _threading
+
+                _threading.Thread(target=self.server.shutdown, daemon=True).start()
                 return
             self._send_json({"error": f"未知路径 {path}"}, 404)
         except Exception as exc:  # pragma: no cover - 兜底

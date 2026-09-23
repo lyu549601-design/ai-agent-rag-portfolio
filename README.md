@@ -62,15 +62,34 @@
 
 ### 4.1 网页演示（推荐，面试展示用）
 
+**最省事的方式：双击项目根目录的 `一键演示.bat`。**
+
+- 第一次双击 → 后台启动演示服务并自动打开浏览器；
+- 再双击一次 → 它检测到服务在运行，会问你「要关闭它吗？」，输入 `y` 即关闭；
+- 想直接关、不经询问，双击 `关闭演示.bat`。
+
+涉及的文件：`一键演示.bat`（启动/关闭开关）、`关闭演示.bat`（只关闭）、
+`scripts/launcher.py`（真正的启停逻辑）、`workspace/web.log`（运行日志）。
+
+等价命令（喜欢命令行的话）：
+
 ```powershell
 cd D:\xm\trusted-procurement-agent
-python -m procurement_agent web --open
+python scripts/launcher.py            # 开关式：没运行就启动，运行中就问你要不要关
+python scripts/launcher.py --start    # 只启动
+python scripts/launcher.py --stop     # 只关闭
+python scripts/launcher.py --status   # 只看状态
+python scripts/launcher.py --port 8899   # 换端口
 ```
+
+> 关闭走的是 HTTP 优雅退出而不是硬杀进程，并且会先确认端口上跑的确实是本项目的服务，
+> 不会误杀别人的程序。
 
 浏览器打开 `http://127.0.0.1:8765/`，三个页面：
 
 - **流程演示**：点预设场景或自己写需求 → 右侧实时时间线滚动 → 需要写操作时弹出**审批卡片**，
-  选审批人角色后点批准 / 拒绝，结果实时渲染（时间线直接来自审计日志，不是另做的展示数据）；
+  选审批人角色后点批准 / 拒绝，结果实时渲染（时间线直接来自审计日志，不是另做的展示数据）。
+  每次运行还能单独选大脑：**离线大脑（秒回，演示推荐）** 或 **真实模型（DeepSeek，约 30-60 秒）**；
 - **评测仪表盘**：一键跑 golden 评测集，四项指标卡片 + 门禁结论 + 机制自检结果；
 - **审计链**：查看审计流水、校验链完整性、点一下"防篡改演示"当场改坏一条记录看能不能被发现。
 
@@ -209,6 +228,11 @@ trusted-procurement-agent/
 │  ├─ web_ui.html       # 网页界面（单文件，无外部依赖）
 │  ├─ cli.py            # 命令行入口
 │  └─ llm/              # 可插拔大脑：offline（规则基线）/ deepseek（真实模型）
+├─ 一键演示.bat          # 一键启动 / 关闭演示服务（双击即可）
+├─ 关闭演示.bat          # 只关闭（不询问）
+├─ scripts/
+│  ├─ launcher.py       # 启停逻辑：健康检查、优雅关闭、PID 与日志管理
+│  └─ compare_brains.py # 模型对比报告生成
 ├─ data/                # 脱敏样例数据：规则 / 供应商 / 历史订单 / 合同模板
 ├─ evals/               # golden 数据集与门禁阈值
 ├─ docs/INTEGRATION.md  # 接真实系统的接口契约与上线清单

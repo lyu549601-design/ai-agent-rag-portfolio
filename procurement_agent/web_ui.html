@@ -123,12 +123,19 @@
           <h2>需求描述</h2>
           <textarea id="input" placeholder="例如：帮我为厂区扩建二期发起采购申请：30 吨 HRB400E Ø20 螺纹钢"></textarea>
           <div class="row">
-            <select id="approval-mode" title="审批方式">
+            <select id="run-brain" title="大脑" style="max-width:230px">
+              <option value="offline">离线大脑（秒回，演示推荐）</option>
+              <option value="server">真实模型（DeepSeek，较慢）</option>
+            </select>
+            <select id="approval-mode" title="审批方式" style="max-width:190px">
               <option value="ask">网页上人工审批</option>
               <option value="deny">无人值守（一律拒绝）</option>
             </select>
             <button class="primary" id="run-btn">运行</button>
           </div>
+          <p class="muted" style="margin:8px 0 0">
+            选「真实模型」会调用服务端配置的 DeepSeek，单次运行约 30-60 秒；离线大脑用于快速演示流程与治理逻辑。
+          </p>
         </div>
       </div>
       <div>
@@ -249,7 +256,11 @@ async function startRun(){
   $('answer').innerHTML = '<p class="muted"><span class="spin"></span>运行中…</p>';
   $('timeline').innerHTML = '';
   $('approval-slot').innerHTML = '';
-  const res = await api('/api/run', { method:'POST', body:{ input, approval_mode: $('approval-mode').value }});
+  const res = await api('/api/run', { method:'POST', body:{
+    input,
+    approval_mode: $('approval-mode').value,
+    brain: ($('run-brain') || {}).value || 'offline'
+  }});
   if (res.error) { toast(res.error); $('run-btn').disabled = false; return; }
   state.sessionId = res.session_id;
   state.role = null;
