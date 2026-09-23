@@ -10,6 +10,7 @@
 | Agent 记忆服务 | `agent-memory-service/` | 面向长任务 Agent 的任务内分层记忆服务 | Python · FastAPI · PostgreSQL · Redis · sentence-transformers | `:8084` |
 | RAG 企业知识问答 | `rag-enterprise-qa-system/` | 企业私有化文档知识问答，权限过滤 + 混合检索 | FastAPI · PostgreSQL/pgvector · Redis · DeepSeek | `:8090` |
 | 智能采购演示系统 | `demo/` | 采购业务全链路本机演示（受控版本） | Windows + WSL2 · Docker Compose | `127.0.0.1:19320` |
+| 可信采购 Agent | `trusted-procurement-agent/` | 钢材/工业品采购全链路 Agent，重点是「写操作必须人工审批」的治理与可量化评测 | Python（零第三方依赖） · DeepSeek 可插拔 · Docker 沙箱 · hash-chain 审计 | `127.0.0.1:8765` |
 
 ## 系统关系
 
@@ -81,6 +82,29 @@ python -m src.main         # 启动服务，默认 :8090
 - 详细说明见 `demo/` 下的 `docs/00-快速开始.md`
 
 > ⚠️ 本项目为**个人本机受控演示版本**，源码分发受书面授权约束（不公开、不另行分发）。如需随本仓库公开，请先确认授权范围与仓库可见性。
+
+## 5. trusted-procurement-agent — 可信采购 Agent（治理与评测演示）
+
+面向 **钢材 / 工业品采购** 的 Agent，重点不是「能不能聊天」，而是**会治理 + 会评测**：只读操作自动执行，
+**任何写 / 改操作都必须人工审批**，并用 67 个 golden 用例把「守得住」这件事量化成真实数字。
+
+- **四道防线**：① 审批门禁 —— 写操作默认审批，含审批人权限矩阵（等级不足的签字判为越权）与
+  ≥100 万两名高管会签；② 来源绑定 —— 写操作参数必须与最初从用户输入解析出的需求一致；
+  ③ 提示注入双防线 —— 入口拦截 + 工具输出先清洗再进上下文；④ hash-chain 防篡改审计 + 执行沙箱（不可用时 fail-closed）
+- **真实评测数字**（`python -m procurement_agent eval`）：分类准确率 **0.8667**、
+  越权拦截率 **1.0000**（23 次写操作尝试 / 0 次越权）、防注入成功率 **1.0000**（16/16）、
+  引用真实率 **1.0000**（52/52 条引用均真实且本次检索过）
+- **模型可插拔**：默认离线模拟大脑，不需要任何密钥即可跑通全链路；配置 `DEEPSEEK_API_KEY` 后可切真实模型，
+  并附同批用例的[离线基线 vs DeepSeek 对比报告](trusted-procurement-agent/reports/model_comparison.md)
+- **两种演示方式**：双击 `trusted-procurement-agent/一键演示.bat` 打开网页演示
+  （实时执行时间线 + 可点击的审批卡片 + 评测仪表盘 + 审计链防篡改演示）；
+  或命令行 `python -m procurement_agent demo` / `eval`
+- **预留真实系统接入**：只读实现 `ProcurementStore`、写执行实现 `Sandbox`（已提供 HTTP 适配器），
+  并配套幂等账本与补偿回滚，接入契约见 [docs/INTEGRATION.md](trusted-procurement-agent/docs/INTEGRATION.md)
+- 技术栈：Python 标准库（零第三方依赖）· 可选 DeepSeek · 可选 Docker 沙箱
+- 数据全部为脱敏样例，**不含任何真实公司数据**
+
+> 快速开始与完整说明见 [trusted-procurement-agent/README.md](trusted-procurement-agent/README.md)。
 
 ---
 
