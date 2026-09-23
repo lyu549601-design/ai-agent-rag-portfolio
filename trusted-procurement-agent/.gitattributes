@@ -1,0 +1,10 @@
+# 统一行尾为 LF，避免 Windows / Linux 之间产生无意义的整文件差异
+* text=auto eol=lf
+
+# Windows 批处理必须保持 CRLF：cmd 对 LF 换行的多行 if(...) 块会解析出错
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.png binary
+*.jpg binary
+*.pdf binary

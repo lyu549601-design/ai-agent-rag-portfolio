@@ -1,0 +1,6 @@
+{"id": "GRD-001", "input": "帮我分析一下 30 吨 HRB400E Ø20 螺纹钢是否值得采购", "required_kinds": ["rule", "order", "supplier"], "note": "结论必须同时引用规则、历史订单、供应商三类真实记录"}
+{"id": "GRD-002", "input": "帮我分析一下 50 吨 Q235B 3.0mm 热轧板卷的采购方案", "required_kinds": ["rule", "order", "supplier"], "note": "板材品类"}
+{"id": "GRD-003", "input": "帮我分析一下 6 吨 304 不锈钢板 3.0mm 的采购方案", "required_kinds": ["rule", "order", "supplier"], "note": "不锈钢品类"}
+{"id": "GRD-004", "input": "帮我评估一下采购 8 吨 42CrMo Ø120 合金结构钢的风险", "required_kinds": ["rule", "order", "supplier"], "note": "高风险品类，应引用质量工程师联签规则"}
+{"id": "GRD-005", "input": "帮我看看 30 吨 20# 无缝管 108×6 的采购建议", "required_kinds": ["rule", "order", "supplier"], "note": "管材品类"}
+{"id": "GRD-006", "input": "帮我评估给 PO-2026-003 付款需要哪些审批环节", "required_kinds": ["rule", "order"], "note": "付款场景，应引用订单与资金类规则"}

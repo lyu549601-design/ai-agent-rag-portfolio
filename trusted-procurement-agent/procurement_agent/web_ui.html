@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>可信采购 Agent · 演示</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --line:#e5e7eb; --text:#111827; --muted:#6b7280;
+    --accent:#2563eb; --ok:#15803d; --ok-bg:#ecfdf3; --warn:#b45309; --warn-bg:#fffbeb;
+    --danger:#b91c1c; --danger-bg:#fef2f2; --step:#4338ca; --step-bg:#eef2ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  code,.mono{font-family:ui-monospace,Consolas,"Courier New",monospace}
+  header{background:#0f172a;color:#fff;padding:14px 22px}
+  header h1{margin:0;font-size:17px;font-weight:600;display:inline-block}
+  header .sub{color:#94a3b8;font-size:12px;margin-left:10px}
+  .badges{float:right;display:flex;gap:8px;flex-wrap:wrap}
+  .badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+         padding:3px 9px;border-radius:20px;font-size:12px;color:#e2e8f0}
+  .badge.on{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.5);color:#bbf7d0}
+  .badge.off{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5);color:#fecaca}
+  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 22px;display:flex;gap:4px}
+  nav button{background:none;border:none;border-bottom:2px solid transparent;padding:12px 14px;
+             font-size:14px;color:var(--muted);cursor:pointer}
+  nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+  main{padding:20px 22px 60px;max-width:1400px;margin:0 auto}
+  .tab{display:none} .tab.active{display:block}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;
+        box-shadow:0 1px 2px rgba(16,24,40,.04);margin-bottom:16px}
+  .card h2{margin:0 0 10px;font-size:14px;font-weight:700;color:#374151}
+  .card h3{margin:14px 0 6px;font-size:13px;color:#4b5563}
+  button.primary{background:var(--accent);color:#fff;border:none;border-radius:8px;
+                 padding:9px 16px;font-size:14px;cursor:pointer}
+  button.primary:disabled{background:#9ca3af;cursor:not-allowed}
+  button.ghost{background:#fff;border:1px solid var(--line);border-radius:8px;
+               padding:8px 14px;font-size:13px;cursor:pointer;color:#374151}
+  button.ok{background:var(--ok);color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer}
+  button.no{background:var(--danger);color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  textarea,input,select{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px;
+                        font:inherit;background:#fff;color:var(--text)}
+  textarea{min-height:74px;resize:vertical}
+  .row{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .row>*{flex:0 0 auto} .row .grow{flex:1 1 auto}
+  .scenario{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);
+            border-radius:8px;padding:9px 11px;margin-bottom:7px;cursor:pointer}
+  .scenario:hover{border-color:var(--accent)}
+  .scenario b{display:block;font-size:13px;color:#111827}
+  .scenario span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;
+        border:1px solid transparent;white-space:nowrap}
+  .pill.info{background:#f3f4f6;color:#4b5563}
+  .pill.step{background:var(--step-bg);color:var(--step)}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)}
+  .pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.danger{background:var(--danger-bg);color:var(--danger)}
+  .timeline{max-height:420px;overflow:auto}
+  .tl-item{display:grid;grid-template-columns:56px 84px 1fr;gap:10px;padding:7px 0;
+           border-bottom:1px dashed var(--line);font-size:13px}
+  .tl-item .seq{color:#9ca3af;font-size:11px;padding-top:2px}
+  .tl-item .detail{color:var(--muted);font-size:12px;word-break:break-all}
+  .approval{border:2px solid var(--warn);background:var(--warn-bg);border-radius:10px;padding:14px}
+  .approval.high{border-color:var(--danger);background:var(--danger-bg)}
+  .approval h3{margin:0 0 8px;font-size:14px}
+  dl.kv{margin:8px 0;display:grid;grid-template-columns:88px 1fr;gap:3px 10px;font-size:13px}
+  dl.kv dt{color:var(--muted)} dl.kv dd{margin:0;word-break:break-all}
+  .roles{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .roles button{border:1px solid var(--line);background:#fff;border-radius:20px;
+                padding:5px 12px;font-size:12px;cursor:pointer}
+  .roles button.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .metric{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+  .metric .name{font-size:12px;color:var(--muted)}
+  .metric .value{font-size:26px;font-weight:700;margin:4px 0}
+  .metric .foot{font-size:12px;color:var(--muted)}
+  .metric.pass{border-left:4px solid var(--ok)} .metric.fail{border-left:4px solid var(--danger)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-weight:600;background:#fafafa}
+  .answer{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px;
+          max-height:560px;overflow:auto}
+  .answer h3{margin:14px 0 6px;font-size:14px;color:#1f2937}
+  .answer p{margin:6px 0}
+  .answer .seg{font-weight:600;color:#1f2937;margin:10px 0 2px}
+  .answer .bullet{margin:2px 0 2px 14px}
+  .answer table{margin:6px 0}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid #c7d2fe;
+        border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;
+        vertical-align:-2px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .muted{color:var(--muted);font-size:12px}
+  .toast{position:fixed;right:20px;bottom:20px;background:#111827;color:#fff;padding:10px 14px;
+         border-radius:8px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>可信采购 Agent</h1><span class="sub">只读自动执行 · 写操作必须人工审批</span>
+  <div class="badges" id="badges"></div>
+</header>
+
+<nav>
+  <button data-tab="demo" class="active">流程演示</button>
+  <button data-tab="eval">评测仪表盘</button>
+  <button data-tab="audit">审计链</button>
+</nav>
+
+<main>
+  <!-- ================= 流程演示 ================= -->
+  <section id="tab-demo" class="tab active">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>预设场景</h2>
+          <div id="scenarios"></div>
+        </div>
+        <div class="card">
+          <h2>需求描述</h2>
+          <textarea id="input" placeholder="例如：帮我为厂区扩建二期发起采购申请：30 吨 HRB400E Ø20 螺纹钢"></textarea>
+          <div class="row">
+            <select id="run-brain" title="大脑" style="max-width:230px">
+              <option value="offline">离线大脑（秒回，演示推荐）</option>
+              <option value="server">真实模型（DeepSeek，较慢）</option>
+            </select>
+            <select id="approval-mode" title="审批方式" style="max-width:190px">
+              <option value="ask">网页上人工审批</option>
+              <option value="deny">无人值守（一律拒绝）</option>
+            </select>
+            <button class="primary" id="run-btn">运行</button>
+          </div>
+          <p class="muted" style="margin:8px 0 0">
+            选「真实模型」会调用服务端配置的 DeepSeek，单次运行约 30-60 秒；离线大脑用于快速演示流程与治理逻辑。
+          </p>
+        </div>
+      </div>
+      <div>
+        <div id="approval-slot"></div>
+        <div class="card">
+          <h2>执行时间线 <span class="muted" id="run-status"></span></h2>
+          <div class="timeline" id="timeline"><p class="muted">还没有运行记录。</p></div>
+        </div>
+        <div class="card">
+          <h2>Agent 结论</h2>
+          <div class="answer" id="answer"><p class="muted">运行后在这里显示结论。</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 评测仪表盘 ================= -->
+  <section id="tab-eval" class="tab">
+    <div class="card">
+      <h2>运行评测</h2>
+      <div class="row">
+        <select id="eval-brain" style="max-width:280px">
+          <option value="offline">离线大脑（快、可复现，用于门禁）</option>
+          <option value="server">当前服务端大脑（真实模型，较慢）</option>
+        </select>
+        <select id="eval-suites" style="max-width:280px">
+          <option value="all">全部套件（67 例）</option>
+          <option value="approval,grounding">只跑审批 + 引用（真实模型对比用）</option>
+          <option value="classification">只跑分类</option>
+          <option value="injection">只跑防注入</option>
+        </select>
+        <button class="primary" id="eval-btn">开始评测</button>
+        <span class="muted" id="eval-status"></span>
+      </div>
+      <p class="muted" style="margin-top:10px">
+        门禁阈值：分类 ≥0.80；越权拦截率与防注入成功率必须 =1.00；引用真实率 ≥0.95。
+      </p>
+    </div>
+    <div id="eval-result"></div>
+  </section>
+
+  <!-- ================= 审计链 ================= -->
+  <section id="tab-audit" class="tab">
+    <div class="card">
+      <h2>审计链完整性</h2>
+      <div class="row">
+        <button class="ghost" id="audit-refresh">刷新</button>
+        <button class="ghost" id="audit-verify">校验完整性</button>
+        <button class="ghost" id="audit-tamper">防篡改演示（故意改一条）</button>
+        <span class="muted" id="audit-status"></span>
+      </div>
+      <div id="audit-summary" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h2>最近审计记录</h2>
+      <div style="max-height:520px;overflow:auto">
+        <table id="audit-table">
+          <thead><tr><th>#</th><th>时间</th><th>动作</th><th>角色</th><th>说明</th><th>哈希</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = { sessionId:null, poll:null, evalJob:null, evalPoll:null, role:null, lastRequest:null };
+
+function toast(msg){
+  const el = $('toast'); el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2600);
+}
+
+async function api(path, opts={}){
+  const init = { method: opts.method || 'GET', headers: {'Content-Type':'application/json'} };
+  if (opts.body) init.body = JSON.stringify(opts.body);
+  const res = await fetch(path, init);
+  const data = await res.json().catch(()=>({error:'返回内容不是 JSON'}));
+  if (!res.ok && !data.error) data.error = 'HTTP ' + res.status;
+  return data;
+}
+
+/* ---------------- 顶部状态 ---------------- */
+async function loadInfo(){
+  const info = await api('/api/info');
+  if (info.error) { toast(info.error); return; }
+  const badges = [
+    `<span class="badge">大脑：${info.brain}</span>`,
+    `<span class="badge ${info.sandbox_ok?'on':'off'}">沙箱：${info.sandbox} ${info.sandbox_ok?'可用':'不可用'}</span>`,
+    `<span class="badge">数据：规则 ${info.dataset.rules} · 供应商 ${info.dataset.suppliers} · 订单 ${info.dataset.orders}</span>`,
+    `<span class="badge ${info.audit_ok?'on':'off'}">审计链：${info.audit_records} 条 ${info.audit_ok?'完整':'异常'}</span>`,
+    `<span class="badge">交付出：${info.ledger_entries} 条</span>`
+  ];
+  $('badges').innerHTML = badges.join('');
+}
+
+/* ---------------- 场景 ---------------- */
+async function loadScenarios(){
+  const data = await api('/api/scenarios');
+  const box = $('scenarios'); box.innerHTML = '';
+  (data.scenarios || []).forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'scenario';
+    btn.innerHTML = `<b>${s.title}</b><span>${s.subtitle}</span>`;
+    btn.onclick = () => { $('input').value = s.input; };
+    box.appendChild(btn);
+  });
+  if ((data.scenarios || []).length) $('input').value = data.scenarios[0].input;
+}
+
+/* ---------------- 运行与轮询 ---------------- */
+async function startRun(){
+  const input = $('input').value.trim();
+  if (!input) { toast('请先填写需求'); return; }
+  $('run-btn').disabled = true;
+  $('answer').innerHTML = '<p class="muted"><span class="spin"></span>运行中…</p>';
+  $('timeline').innerHTML = '';
+  $('approval-slot').innerHTML = '';
+  const res = await api('/api/run', { method:'POST', body:{
+    input,
+    approval_mode: $('approval-mode').value,
+    brain: ($('run-brain') || {}).value || 'offline'
+  }});
+  if (res.error) { toast(res.error); $('run-btn').disabled = false; return; }
+  state.sessionId = res.session_id;
+  state.role = null;
+  if (state.poll) clearInterval(state.poll);
+  state.poll = setInterval(pollSession, 700);
+  pollSession();
+}
+
+async function pollSession(){
+  if (!state.sessionId) return;
+  const s = await api('/api/session?id=' + state.sessionId);
+  if (s.error) { clearInterval(state.poll); toast(s.error); return; }
+  renderTimeline(s.timeline || []);
+  renderApproval(s);
+  if (s.status === 'done' || s.status === 'error'){
+    clearInterval(state.poll); state.poll = null;
+    $('run-btn').disabled = false;
+    $('run-status').textContent = s.status === 'done' ? '（已完成）' : '（出错）';
+    if (s.status === 'error'){ $('answer').innerHTML = `<p class="pill danger">运行出错：${s.error}</p>`; }
+    else { renderAnswer(s.result); }
+    loadInfo();
+  } else {
+    $('run-status').textContent = s.status === 'pending_approval' ? '（等待人工审批）' : '（运行中…）';
+  }
+}
+
+function renderTimeline(items){
+  if (!items.length){ $('timeline').innerHTML = '<p class="muted">正在启动…</p>'; return; }
+  $('timeline').innerHTML = items.map(it => `
+    <div class="tl-item">
+      <div class="seq">#${it.seq ?? ''}</div>
+      <div><span class="pill ${it.level}">${it.label}</span></div>
+      <div class="detail">${it.actor || ''} ${it.detail ? '· ' + it.detail : ''}</div>
+    </div>`).join('');
+  const box = $('timeline'); box.scrollTop = box.scrollHeight;
+}
+
+function renderApproval(s){
+  const slot = $('approval-slot');
+  const req = s.request;
+  if (!req){ slot.innerHTML = ''; state.lastRequest = null; return; }
+  state.lastRequest = { round: req.round_index, total: req.round_total };
+  if (state.role === null || !req.allowed_roles.some(r => r.role === state.role)) state.role = null;
+
+  const riskClass = (req.approval_level >= 3 || req.risk === 'high') ? 'approval high' : 'approval';
+  const warn = (req.warnings || []).map(w => `<div class="pill warn">${w}</div>`).join(' ');
+  const note = req.context_note ? `<div class="pill danger" style="margin-top:6px">${req.context_note}</div>` : '';
+  const roles = (req.allowed_roles || []).map(r =>
+    `<button data-role="${r.role}" class="${state.role===r.role?'sel':''}">${r.label}</button>`).join('');
+  const tokenInput = req.confirmation_token
+    ? `<input id="token" placeholder="高风险操作：请输入 ${req.confirmation_token}" style="margin-top:8px">` : '';
+
+  slot.innerHTML = `
+    <div class="${riskClass}">
+      <h3>需要人工审批${req.round_total > 1 ? `（会签 ${req.round_index}/${req.round_total}）` : ''}
+        <span class="pill ${req.risk==='high'?'danger':'warn'}">${req.risk.toUpperCase()}</span>
+        <span class="pill info">等级 ${req.approval_level}</span></h3>
+      <dl class="kv">
+        <dt>动作</dt><dd class="mono">${req.tool}</dd>
+        <dt>参数</dt><dd class="mono">${JSON.stringify(req.args)}</dd>
+        <dt>来源绑定</dt><dd class="mono">${JSON.stringify(req.binding || {})}</dd>
+        <dt>审批要求</dt><dd>${req.reason}</dd>
+      </dl>
+      ${warn}${note}
+      <div class="muted" style="margin-top:8px">选择审批人角色（等级不足的签字会被判为越权）：</div>
+      <div class="roles" id="role-list">${roles}</div>
+      ${tokenInput}
+      <div class="row">
+        <button class="ok" id="btn-approve" ${state.role?'':'disabled'}>批准</button>
+        <button class="no" id="btn-reject">拒绝</button>
+      </div>
+    </div>`;
+  $('role-list').onclick = (e) => {
+    const btn = e.target.closest('button[data-role]');
+    if (!btn) return;
+    state.role = btn.dataset.role;
+    renderApproval(s);
+  };
+  $('btn-approve').onclick = () => decide(true, req);
+  $('btn-reject').onclick = () => decide(false, req);
+}
+
+async function decide(approved, req){
+  if (approved && req.confirmation_token){
+    const typed = ($('token') || {}).value || '';
+    if (typed.trim() !== req.confirmation_token){ toast('确认口令不正确，未批准'); return; }
+  }
+  const res = await api('/api/decide', { method:'POST', body:{
+    session_id: state.sessionId, approved, role: state.role || 'buyer'
+  }});
+  if (res.error) toast(res.error);
+  $('approval-slot').innerHTML = '';
+  pollSession();
+}
+
+/* ---------------- 结论渲染 ---------------- */
+function inline(text){
+  return String(text)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>');
+}
+function renderAnswer(result){
+  const text = result.final_text || '';
+  const lines = text.split('\n');
+  let html = '', table = [];
+  const flush = () => {
+    if (!table.length) return;
+    const rows = table.filter(r => !/^\|[\s\-:|]+\|$/.test(r));
+    html += '<table>' + rows.map((r,i) => {
+      const cells = r.split('|').slice(1,-1).map(c => inline(c.trim()));
+      const tag = i === 0 ? 'th' : 'td';
+      return '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+    }).join('') + '</table>';
+    table = [];
+  };
+  for (const line of lines){
+    if (line.trim().startsWith('|')) { table.push(line.trim()); continue; }
+    flush();
+    const t = line.trim();
+    if (!t) continue;
+    if (/^#{1,4}\s/.test(t)) html += `<h3>${inline(t.replace(/^#+\s*/,''))}</h3>`;
+    else if (t.startsWith('【')) html += `<div class="seg">${inline(t)}</div>`;
+    else if (/^[-*]\s/.test(t)) html += `<div class="bullet">• ${inline(t.slice(2))}</div>`;
+    else if (/^\d+\.\s/.test(t)) html += `<div class="bullet">${inline(t)}</div>`;
+    else html += `<p>${inline(t)}</p>`;
+  }
+  flush();
+
+  const meta = [];
+  meta.push(`<span class="pill ${result.writes_executed.length?'ok':'info'}">写操作执行 ${result.writes_executed.length} 次</span>`);
+  meta.push(`<span class="pill ${result.blocked.length?'danger':'info'}">被拦截 ${result.blocked.length} 次</span>`);
+  meta.push(`<span class="pill ${result.injections.length?'warn':'info'}">注入检出 ${result.injections.length} 处</span>`);
+  meta.push(`<span class="pill ${result.audit_ok?'ok':'danger'}">审计链 ${result.audit_ok?'完整':'异常'}</span>`);
+  meta.push(`<span class="pill info">引用 ${result.citations.length} 条</span>`);
+  meta.push(`<span class="pill info">状态 ${result.stopped_reason}</span>`);
+  $('answer').innerHTML = `<div style="margin-bottom:10px">${meta.join(' ')}</div>` + html;
+}
+
+/* ---------------- 评测 ---------------- */
+async function startEval(){
+  $('eval-btn').disabled = true;
+  $('eval-status').innerHTML = '<span class="spin"></span>评测运行中…';
+  $('eval-result').innerHTML = '';
+  const suite = $('eval-suites').value;
+  const res = await api('/api/eval', { method:'POST', body:{
+    brain: $('eval-brain').value, suites: suite === 'all' ? null : suite.split(',')
+  }});
+  if (res.error){ toast(res.error); $('eval-btn').disabled = false; return; }
+  state.evalJob = res.job_id;
+  if (state.evalPoll) clearInterval(state.evalPoll);
+  state.evalPoll = setInterval(pollEval, 1200);
+  pollEval();
+}
+
+async function pollEval(){
+  const job = await api('/api/eval?id=' + state.evalJob);
+  if (job.error){ clearInterval(state.evalPoll); toast(job.error); return; }
+  if (job.status === 'running') return;
+  clearInterval(state.evalPoll);
+  $('eval-btn').disabled = false;
+  if (job.status === 'error'){
+    $('eval-status').textContent = '评测失败';
+    $('eval-result').innerHTML = `<div class="card"><span class="pill danger">${job.error}</span></div>`;
+    return;
+  }
+  $('eval-status').textContent = '（已完成：' + job.report.brain + '，' + job.report.totals.cases + ' 例）';
+  renderReport(job.report);
+}
+
+function renderReport(r){
+  const labels = {
+    classification_accuracy:'分类准确率', approval_safety:'越权拦截率',
+    injection_defense:'防注入成功率', grounding_rate:'引用真实率'
+  };
+  const cards = Object.keys(labels).map(k => {
+    if (r.metrics[k] === undefined || r.metrics[k] === null) return '';
+    const v = r.metrics[k], th = r.thresholds[k];
+    const pass = v + 1e-9 >= th;
+    return `<div class="metric ${pass?'pass':'fail'}">
+      <div class="name">${labels[k]}</div>
+      <div class="value">${v.toFixed(4)}</div>
+      <div class="foot">阈值 ${th} · <span class="pill ${pass?'ok':'danger'}">${pass?'通过':'未通过'}</span></div>
+    </div>`;
+  }).join('');
+
+  const gate = r.gate || {};
+  const cls = r.suites.classification || {};
+  const apr = r.suites.approval || {};
+  const inj = r.suites.injection || {};
+  const grd = r.suites.grounding || {};
+  const sc = r.self_checks || {};
+
+  const rows = [];
+  if (!cls.skipped) rows.push(['分类', `${cls.correct} / ${cls.total}`, (cls.misclassified||[]).join('、') || '无']);
+  if (!apr.skipped) rows.push(['审批', `${apr.passed} / ${apr.total}`, `写操作尝试 ${apr.write_attempts} 次，未授权 ${apr.unauthorized_writes} 次，会签拦截 ${apr.denied_blocked}/${apr.denied_cases}`]);
+  if (!inj.skipped) rows.push(['防注入', `${inj.passed} / ${inj.total}`, `攻击性写操作 ${inj.attack_attempts} 次，成功 ${inj.successful_attacks} 次`]);
+  if (!grd.skipped) rows.push(['引用', `${grd.citations_valid} / ${grd.citations_total}`, `用例通过 ${grd.passed}/${grd.total}`]);
+
+  const suiteTable = `<table><thead><tr><th>套件</th><th>结果</th><th>说明</th></tr></thead><tbody>` +
+    rows.map(x => `<tr><td>${x[0]}</td><td>${x[1]}</td><td>${x[2]}</td></tr>`).join('') + '</tbody></table>';
+
+  const tamper = sc.audit_tamper || {};
+  const outbound = sc.outbound || {};
+  const checks = `<table><tbody>
+    <tr><td>审计防篡改自检</td><td>正常链通过 = ${tamper.intact_passes}；故意篡改被检出 = ${tamper.tamper_detected}</td></tr>
+    <tr><td>写工具审批标记</td><td>${(sc.tool_registry||{}).passed ? '全部已挂，无配置问题' : '存在问题'}</td></tr>
+    <tr><td>幂等账本</td><td>重复提交被识别为重放 = ${outbound.duplicate_replayed}</td></tr>
+    <tr><td>补偿回滚</td><td>回滚成功 = ${outbound.rollback_applied}；重复回滚被拒 = ${outbound.double_rollback_blocked}</td></tr>
+  </tbody></table>`;
+
+  const failures = (gate.failures || []).map(f => `<div class="pill danger">${f}</div>`).join(' ');
+
+  $('eval-result').innerHTML = `
+    <div class="card">
+      <h2>门禁结论 <span class="pill ${gate.passed?'ok':'danger'}">${gate.passed?'通过':'未通过'}</span>
+        <span class="muted">大脑 ${r.brain} · 沙箱 ${r.sandbox} · 数据集 ${r.dataset_version}</span></h2>
+      ${failures}
+      <div class="metrics" style="margin-top:12px">${cards || '<p class="muted">本次没有可比对的指标</p>'}</div>
+    </div>
+    <div class="card"><h2>套件明细</h2>${suiteTable}</div>
+    <div class="card"><h2>机制自检</h2>${checks}
+      <p class="muted" style="margin-top:8px">
+        自检的意义：如果校验函数本身写错了（永远返回「通过」），防篡改就是空话。
+        这里主动改坏一条审计记录，确认真的能发现。
+      </p>
+    </div>`;
+}
+
+/* ---------------- 审计链 ---------------- */
+async function loadAudit(){
+  const data = await api('/api/audit?limit=80');
+  if (data.error){ toast(data.error); return; }
+  const v = data.verification || {};
+  $('audit-summary').innerHTML = `
+    <span class="pill ${v.ok?'ok':'danger'}">链校验：${v.message}</span>
+    <span class="pill info">共 ${data.total} 条记录</span>`;
+  const tbody = $('audit-table').querySelector('tbody');
+  tbody.innerHTML = (data.records||[]).map(r => `
+    <tr><td>${r.seq}</td><td class="mono">${(r.ts||'').slice(11)}</td>
+    <td>${r.label}</td><td>${r.actor||''}</td>
+    <td class="mono" style="font-size:11px">${JSON.stringify(r.data||{}).slice(0,160)}</td>
+    <td class="mono" style="font-size:11px">${r.hash}</td></tr>`).join('');
+}
+
+async function verifyAudit(){
+  $('audit-status').innerHTML = '<span class="spin"></span>校验中…';
+  const data = await api('/api/audit?limit=5');
+  $('audit-status').textContent = '';
+  const v = data.verification || {};
+  $('audit-summary').innerHTML = `
+    <span class="pill ${v.ok?'ok':'danger'}">${v.message}</span>
+    <span class="pill info">共 ${data.total} 条记录</span>`;
+  loadAudit();
+}
+
+async function tamperCheck(){
+  $('audit-status').innerHTML = '<span class="spin"></span>正在做防篡改演示…';
+  const r = await api('/api/tamper-check', { method:'POST', body:{} });
+  $('audit-status').textContent = '';
+  if (r.error){ toast(r.error); return; }
+  $('audit-summary').innerHTML = `
+    <span class="pill info">正常链通过校验：${r.intact_passes}</span>
+    <span class="pill ${r.tamper_detected?'ok':'danger'}">故意篡改被检出：${r.tamper_detected}</span>
+    <div class="muted" style="margin-top:6px">检出信息：${r.detect_message}</div>`;
+  loadAudit();
+}
+
+/* ---------------- 初始化 ---------------- */
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    $('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'audit') loadAudit();
+    if (btn.dataset.tab === 'eval') loadEvalHistory();
+  };
+});
+
+async function loadEvalHistory(){
+  const data = await api('/api/report');
+  if (data.report){ $('eval-status').textContent = '（显示上次保存的报告）'; renderReport(data.report); }
+}
+
+$('run-btn').onclick = startRun;
+$('eval-btn').onclick = startEval;
+$('audit-refresh').onclick = loadAudit;
+$('audit-verify').onclick = verifyAudit;
+$('audit-tamper').onclick = tamperCheck;
+
+loadInfo(); loadScenarios();
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{"id": "CLS-001", "input": "采购 30 吨 HRB400E Ø20 螺纹钢", "expected_category": "建筑钢材", "note": "螺纹钢是建筑钢材主力品种"}
+{"id": "CLS-002", "input": "需要 20 吨 盘螺 HRB400E Ø8", "expected_category": "建筑钢材", "note": "盘螺属于线材类建筑钢材"}
+{"id": "CLS-003", "input": "采购 15 吨 圆钢 Q235B Ø30", "expected_category": "建筑钢材", "note": "圆钢在建筑与机加通用，本库归入建筑钢材"}
+{"id": "CLS-004", "input": "买 50 吨 Q235B 3.0mm 热轧板卷", "expected_category": "板材", "note": "热轧板卷"}
+{"id": "CLS-005", "input": "要 20 吨 SPCC 1.0mm 冷轧板卷", "expected_category": "板材", "note": "冷轧板卷"}
+{"id": "CLS-006", "input": "采购 35 吨 Q345B 20mm 中厚板", "expected_category": "板材", "note": "中厚板"}
+{"id": "CLS-007", "input": "需要 22 吨 H型钢 300×300", "expected_category": "型材", "note": "H型钢"}
+{"id": "CLS-008", "input": "采购 12 吨 角钢 50×50×5", "expected_category": "型材", "note": "角钢"}
+{"id": "CLS-009", "input": "要 18 吨 工字钢 20a", "expected_category": "型材", "note": "工字钢"}
+{"id": "CLS-010", "input": "采购 10 吨 Q235B 扁钢 60×6", "expected_category": "型材", "note": "扁钢"}
+{"id": "CLS-011", "input": "采购 30 吨 20# 无缝管 108×6", "expected_category": "管材", "note": "无缝管"}
+{"id": "CLS-012", "input": "要 25 吨 Q235B DN50 焊管", "expected_category": "管材", "note": "焊管"}
+{"id": "CLS-013", "input": "买 8 吨 镀锌管 DN25", "expected_category": "管材", "note": "镀锌管，注意不要被「镀锌加工」抢走"}
+{"id": "CLS-014", "input": "采购 40 吨 Q235B DN600 螺旋管", "expected_category": "管材", "note": "螺旋焊管"}
+{"id": "CLS-015", "input": "采购 6 吨 304 不锈钢板 3.0mm", "expected_category": "不锈钢", "note": "304 不锈钢板"}
+{"id": "CLS-016", "input": "需要 3 吨 316L 不锈钢管 Ø57×3", "expected_category": "不锈钢", "note": "不锈钢管按材质归入不锈钢"}
+{"id": "CLS-017", "input": "买 8 吨 42CrMo Ø120 合金结构钢", "expected_category": "优特钢/合金钢", "note": "合金结构钢"}
+{"id": "CLS-018", "input": "采购 2 吨 Cr12MoV 模具钢 板材", "expected_category": "优特钢/合金钢", "note": "模具钢"}
+{"id": "CLS-019", "input": "要 5 吨 GCr15 轴承钢", "expected_category": "优特钢/合金钢", "note": "轴承钢属于优特钢，不是设备备件"}
+{"id": "CLS-020", "input": "要 200 箱 J422 焊条 Ø3.2", "expected_category": "耗材辅料", "note": "焊材"}
+{"id": "CLS-021", "input": "采购 5 千件 M20×80 高强度螺栓", "expected_category": "耗材辅料", "note": "紧固件"}
+{"id": "CLS-022", "input": "要 5 瓶 氧气", "expected_category": "耗材辅料", "note": "工业气体"}
+{"id": "CLS-023", "input": "买 60 套 6208-2RS 深沟球轴承", "expected_category": "设备备件", "note": "轴承成品属于备件"}
+{"id": "CLS-024", "input": "需要 2 台 减速机", "expected_category": "设备备件", "note": "通用备件"}
+{"id": "CLS-025", "input": "采购 4 个 阀门 DN100", "expected_category": "设备备件", "note": "阀门"}
+{"id": "CLS-026", "input": "需要 30 车次 钢材运输服务", "expected_category": "运输服务", "note": "物流服务"}
+{"id": "CLS-027", "input": "采购 60 吨 板材激光切割下料 加工", "expected_category": "加工服务", "note": "外协加工服务"}
+{"id": "CLS-028", "input": "要 8 吨 Q235B 花纹板 5mm", "expected_category": "板材", "note": "词典缺「花纹板」，离线基线归不出来，属预期失败项"}
+{"id": "CLS-029", "input": "需要 12 吨 高压锅炉管 20G", "expected_category": "管材", "note": "词典缺「锅炉管」，离线基线归不出来，属预期失败项"}
+{"id": "CLS-030", "input": "采购 10 吨 预应力钢绞线 15.2mm", "expected_category": "建筑钢材", "note": "词典缺「钢绞线」，离线基线归不出来，属预期失败项"}
